@@ -143,6 +143,8 @@
 //
 //  46 = Huawei SUN2000 Wechselrichter
 //
+//  47 = Fronius Symo Gen24 Wechselrichter
+//
 //  ---------------------------------------------------------------------------
 //
 $Regler = "0";

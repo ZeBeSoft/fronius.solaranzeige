@@ -271,6 +271,11 @@ switch ($Regler) {
     require($Pfad."/huawei.php");
   break;
 
+  case 47:
+    // Fronius Symo Gen24
+    require($Pfad."/fronius_symo_gen24.php");
+  break;
+
 
   default:
     require($Pfad."/fehler.php");
