@@ -19,7 +19,7 @@
 //
 //  Dies ist ein Programmteil des Programms "Solaranzeige"
 //
-//  Es dient dem Auslesen des Fronius Symo Wechselrichters über die LAN Schnittstelle
+//  Es dient dem Auslesen des Fronius Symo Gen24 Wechselrichters über die LAN Schnittstelle
 //  Port = 80
 //  Das Auslesen wird hier mit einer Schleife durchgeführt. Wie oft die Daten
 //  ausgelesen und gespeichert werden steht in der user.config.php
@@ -295,7 +295,7 @@ else {
 }
 $aktuelleDaten["Energy"] = $energyData;
 
-$funktionen->log_schreiben(print_r($energyData,1),"*- ",7);
+$funktionen->log_schreiben(print_r($energyData,1),"*- ",8);
 
 $energyDataFileV2 = $Pfad."/database/".$GeraeteNummer.".energyDataV2.ini";
 if (file_exists($energyDataFileV2)) {
@@ -311,7 +311,7 @@ else {
 		$funktionen->log_schreiben("Datei ".$energyDataFileV2." erzeugt.","   ",5);
 	}
 }
-$funktionen->log_schreiben("energyDataV2 <= ".print_r($energyDataV2,1),"*- ",7);
+$funktionen->log_schreiben("energyDataV2 <= ".print_r($energyDataV2,1),"*- ",8);
 
 
 if($funktionen->tageslicht() or $InfluxDaylight === false)  {
@@ -370,8 +370,9 @@ do {
     $aktuelleDaten[$prefix]["Meter_Serial"] = $JSON_Daten["Body"]["Data"]["Meter"]["0"]["Serial"];
     $aktuelleDaten[$prefix]["Ohmpilot"] = count($JSON_Daten["Body"]["Data"]["Ohmpilot"]);
     $aktuelleDaten[$prefix]["Storage"] = count($JSON_Daten["Body"]["Data"]["Storage"]);
-
-    $funktionen->log_schreiben(print_r($JSON_Daten["Head"]["Timestamp"]." - ".$prefix,1),"T- ",7);
+	
+    // Timestamp
+	$aktuelleDaten[$prefix]["Timestamp"] = $JSON_Daten["Head"]["Timestamp"];
   }
   else {
     break;
@@ -396,7 +397,6 @@ do {
 	
     // Timestamp
 	$aktuelleDaten[$prefix]["Timestamp"] = $JSON_Daten["Head"]["Timestamp"];
-    $funktionen->log_schreiben(print_r($JSON_Daten["Head"]["Timestamp"]." - ".$prefix,1),"T- ",7);
   }
   else {
     break;
@@ -425,7 +425,6 @@ do {
 	
     // Timestamp
 	$aktuelleDaten[$prefix]["Timestamp"] = $JSON_Daten["Head"]["Timestamp"];
-    $funktionen->log_schreiben(print_r($JSON_Daten["Head"]["Timestamp"]." - ".$prefix,1),"T- ",7);
   }
   else {
     break;
@@ -448,7 +447,6 @@ do {
 
     // Timestamp
 	$aktuelleDaten[$prefix]["Timestamp"] = $JSON_Daten["Head"]["Timestamp"];
-    $funktionen->log_schreiben(print_r($JSON_Daten["Head"]["Timestamp"]." - ".$prefix,1),"T- ",7);
   }
   else {
     break;
@@ -493,7 +491,6 @@ do {
 
     // Timestamp
 	$aktuelleDaten[$prefix]["Timestamp"] = $JSON_Daten["Head"]["Timestamp"];
-    $funktionen->log_schreiben(print_r($JSON_Daten["Head"]["Timestamp"]." - ".$prefix,1),"T- ",7);
   }
   else {
     break;
@@ -532,9 +529,6 @@ do {
 	$aktuelleDaten[$prefix]["Timestamp"] = $JSON_Daten["Head"]["Timestamp"];
 	
 	$timeStampPowerFlow = strtotime($JSON_Daten["Head"]["Timestamp"]);
-	$funktionen->log_schreiben(print_r(date(DATE_ATOM,$timeStampPowerFlow)." - ".$prefix,1),"Ta ",7);
-
-    $funktionen->log_schreiben(print_r($JSON_Daten["Head"]["Timestamp"]." - ".$prefix,1),"T- ",7);
   }
   else {
     break;
@@ -605,13 +599,6 @@ do {
 	  
       // Timestamp
 	  $aktuelleDaten[$prefix]["Timestamp"] = $JSON_Daten["Head"]["Timestamp"];
-	  
-	  $funktionen->log_schreiben(print_r(strtotime($JSON_Daten["Head"]["Timestamp"])." - ".$prefix,1),"Tm ",7);
-	  
-      $funktionen->log_schreiben(print_r($aktuelleDaten[$prefix]["COMPONENTS_TIME_STAMP_U64"]." - ".$prefix,1),"Tm ",7);
-      $funktionen->log_schreiben(print_r(date(DATE_ATOM,$aktuelleDaten[$prefix]["COMPONENTS_TIME_STAMP_U64"])." - ".$prefix,1),"Tm ",7);
-	  
-      $funktionen->log_schreiben(print_r($JSON_Daten["Head"]["Timestamp"]." - ".$prefix,1),"T- ",7);
     }
     else {
       break;
@@ -862,7 +849,7 @@ $epoche = $timeStampPowerFlow;
 
 $deltaTime = $epoche - $energyData["Timestamp"]["epoche"];
 if( $deltaTime != 60 ) {
-	$funktionen->log_schreiben("DeltaTime ".$deltaTime." != 60s","   ",5);
+	$funktionen->log_schreiben("DeltaTime ".$deltaTime." != 60s","   ",8);
 }
 $energyData["Timestamp"]["epoche"] = $epoche;
 // $energyData["Timestamp"]["Day"] = $day;
@@ -879,10 +866,10 @@ foreach($energyDataType as $type) {
 }
 
 writeIniFile($energyDataFile,$energyData);
-$funktionen->log_schreiben(print_r($energyData,1),"*- ",7);
+$funktionen->log_schreiben(print_r($energyData,1),"*- ",8);
 
 writeIniFile($energyDataFileV2,$energyDataV2);
-$funktionen->log_schreiben("energyDataV2 => ".print_r($energyDataV2,1),"*- ",7);
+$funktionen->log_schreiben("energyDataV2 => ".print_r($energyDataV2,1),"*- ",8);
 
 Ausgang:
 
