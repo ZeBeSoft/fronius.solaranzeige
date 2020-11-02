@@ -264,7 +264,7 @@ class funktionen{
 
     //  Jetzt müssen die Daten in die lokale InfluxDB übertragen werden.
     //
-    $this->log_schreiben("Daten zur lokalen InfluxDB [ ".$daten["InfluxDBLokal"]." ] senden ... ","*  ",7);
+    $this->log_schreiben("Daten zur lokalen InfluxDB [ ".$daten["InfluxDBLokal"]." ] senden ... ","*  ",8);
 	if ((intval(date('i')) % 10) == 0) {
       $this->log_schreiben("10 Minuten Raster","   ",5);
 	}
@@ -278,7 +278,7 @@ class funktionen{
       $query  = "Statistik Bezeichnung=\"WhTag\",Datum=\"".$daten['Datum']."\",Woche=".$daten['Woche'].",Monat=".$daten['Monat'].",";
       $query .= "Wert=".$daten["WattstundenGesamtHeute"].",Wochentag=\"".$daten['Wochentag']."\"";
 
-	  $this->log_schreiben("query: \n".print_r($query,1),"   ",7);
+	  $this->log_schreiben("query: \n".print_r($query,1),"   ",8);
 
       $ch = curl_init('http://localhost/write?db='.$daten["InfluxDBLokal"].'&precision=s');
 
@@ -2689,6 +2689,7 @@ class funktionen{
             $query .= ",Objekt=\"".$daten["Objekt"]."\"";
             $query .= ",Datum=\"".$daten["Datum"]."\"";
  		    $query .= " ".$daten["Timestamp"]."\n";
+ 		    $this->log_schreiben("Info speichern -> Datum: ".print_r($daten["Datum"],1),"   ",7);
           }
 		  
           $query .= "Inverter";
@@ -2751,8 +2752,7 @@ class funktionen{
           $query .= ",PV=".$daten["Energy"]["PV"]["Total"];
 	      $query .= " ".$daten["Timestamp"]."\n";
   
-		  $this->log_schreiben("query: \n".print_r($query,1),"   ",7);
-		  // $this->log_schreiben("Timestamp: ".print_r($daten["Timestamp"],1),"   ",7);
+		  $this->log_schreiben("query: \n".print_r($query,1),"   ",8);
           break;
 
         default:
