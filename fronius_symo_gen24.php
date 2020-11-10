@@ -157,6 +157,7 @@ function ini_write($fp, $_data, $filename, $maxdepth=3)
 $energyDataType = array("GridFeed","GridPurchase","SelfConsumption","TotalConsumption","AC","PV");
 $energyDataSpan = array("Day","Month","Year","Total","Power");
 
+/////////////////////
 function defaultEnergyData() {
 	global $energyDataType;
 	global $energyDataSpan;
@@ -168,29 +169,12 @@ function defaultEnergyData() {
 			$energyData[$type][$span] = 0;
 		}
 	}
+	
 	$energyData["Timestamp"]["Day"] = date("z");
 	$energyData["Timestamp"]["Month"] = date("n");
 	$energyData["Timestamp"]["Year"] = date("Y");
 	$energyData["Timestamp"]["epoche"] = time();
-	return $energyData;
-}
-
-/////////////////////
-function defaultEnergyDataV2() {
-	global $energyDataType;
-	global $energyDataSpan;
 	
-	$energyData = array();
-
-	foreach($energyDataType as $type) {
-		foreach($energyDataSpan as $span) {
-			$energyData[$type][$span] = 0;
-		}
-	}
-	$energyData["Timestamp"]["Day"] = 0;
-	$energyData["Timestamp"]["Month"] = 0;
-	$energyData["Timestamp"]["Year"] = 0;
-	$energyData["Timestamp"]["epoche"] = 0;
 	return $energyData;
 }
 
@@ -241,12 +225,6 @@ function readIniFile($iniFile) {
 }
 
 /////////////////////
-function calculateEnergy(&$energy, $power, $timeSpan = 60) {
-	$divisor = 3600 / $timeSpan;
-	$energy = $energy + ($power / $divisor);
-}
-
-/////////////////////
 function calculateEnergyLinearInterpolated(&$energy, $power, $timeStamp, $lastPower, $lastTimeStamp) {
 	$divisor = 3600 / ($timeStamp - $lastTimeStamp);
 	$interpolatedPower = ($power + $lastPower) / 2;
@@ -254,7 +232,7 @@ function calculateEnergyLinearInterpolated(&$energy, $power, $timeStamp, $lastPo
 }
 
 /////////////////////
-function onTimestampChangedUpdateAndResetCounterV2(&$energyData, $span, $value) {
+function onTimestampChangedUpdateAndResetCounter(&$energyData, $span, $value) {
 	global $energyDataType;
 	if ($energyData["Timestamp"][$span] != $value) {
 		$energyData["Timestamp"][$span] = $value;
@@ -263,17 +241,6 @@ function onTimestampChangedUpdateAndResetCounterV2(&$energyData, $span, $value) 
 				$energyData[$type][$span] = 0;
 			}
 		}
-	}
-}
-
-/////////////////////
-function onTimestampChangedUpdateAndResetCounter(&$energyData, $key, $value) {
-	global $energyDataType;
-	if ($energyData["Timestamp"][$key] != $value) {
-		foreach($energyDataType as $type) {
-			$energyData[$type][$key] = 0;
-		}
-		$energyData["Timestamp"][$key] = $value;
 	}
 }
 
@@ -296,23 +263,6 @@ else {
 $aktuelleDaten["Energy"] = $energyData;
 
 $funktionen->log_schreiben(print_r($energyData,1),"*- ",8);
-
-$energyDataFileV2 = $Pfad."/database/".$GeraeteNummer.".energyDataV2.ini";
-if (file_exists($energyDataFileV2)) {
-	$funktionen->log_schreiben("Datei ".$energyDataFileV2." vorhanden.","   ",5);
-	if (false === ($energyDataV2 = readIniFile($energyDataFileV2))) {
-		$funktionen->log_schreiben("Konnte die Datei ".$energyDataFileV2." nicht lesen.","   ",5);
-	}
-}
-else {
-	$energyDataV2 = defaultEnergyDataV2();
-	// $energyDataV2 = $energyData;
-	if (true === writeIniFile($energyDataFileV2,$energyDataV2)) {
-		$funktionen->log_schreiben("Datei ".$energyDataFileV2." erzeugt.","   ",5);
-	}
-}
-$funktionen->log_schreiben("energyDataV2 <= ".print_r($energyDataV2,1),"*- ",8);
-
 
 if($funktionen->tageslicht() or $InfluxDaylight === false)  {
   //  Der Wechselrichter wird nur am Tage abgefragt.
@@ -401,9 +351,9 @@ do {
   else {
     break;
   }
+  
 
-// 3PInverterData
-
+  // 3PInverterData
   $URL  = "solar_api/v1/GetInverterRealtimeData.cgi";
   $URL .= "?Scope=Device";
   $URL .= "&DeviceID=".$WR_Adresse;
@@ -431,6 +381,7 @@ do {
   }
 
 
+  // CumulationInverterData
   $URL  = "solar_api/v1/GetInverterRealtimeData.cgi";
   $URL .= "?Scope=Device";
   $URL .= "&DeviceID=".$WR_Adresse;
@@ -453,10 +404,7 @@ do {
   }
 
 
-
-
-
-
+  // CommonInverterData
   $URL  = "solar_api/v1/GetInverterRealtimeData.cgi";
   $URL .= "?Scope=Device";
   $URL .= "&DeviceID=".$WR_Adresse;
@@ -497,6 +445,7 @@ do {
   }
 
 
+  // GetPowerFlowRealtimeData
   $URL  = "/solar_api/v1/GetPowerFlowRealtimeData.fcgi";
 
   $JSON_Daten = $funktionen->read($WR_IP,$WR_Port,$URL);
@@ -535,9 +484,9 @@ do {
   }
 
 
-
+  // Meter
   if ($aktuelleDaten["DeviceInfo"]["Meter"] == 1)  {
-
+    // GetMeterRealtimeData
     $URL  = "/solar_api/v1/GetMeterRealtimeData.cgi";
     $URL .= "?Scope=System";
     $JSON_Daten = $funktionen->read($WR_IP,$WR_Port,$URL);
@@ -607,7 +556,7 @@ do {
   }
 
 
-
+  // not tested
   if ($aktuelleDaten["DeviceInfo"]["Ohmpilot"] == 1)  {
 
     $URL  = "/solar_api/v1/GetOhmPilotRealtimeData.cgi";
@@ -629,6 +578,7 @@ do {
 
   }
 
+  // not tested
   if ($aktuelleDaten["DeviceInfo"]["Storage"] == 1)  {
 	//
   }
@@ -692,19 +642,19 @@ do {
   $month = date("n",$timeStampPowerFlow);
   $year = date("Y",$timeStampPowerFlow);
 
-  onTimestampChangedUpdateAndResetCounterV2($energyDataV2,"Day",$day);
-  onTimestampChangedUpdateAndResetCounterV2($energyDataV2,"Month",$month);
-  onTimestampChangedUpdateAndResetCounterV2($energyDataV2,"Year",$year);
+  onTimestampChangedUpdateAndResetCounter($energyData,"Day",$day);
+  onTimestampChangedUpdateAndResetCounter($energyData,"Month",$month);
+  onTimestampChangedUpdateAndResetCounter($energyData,"Year",$year);
 
   foreach($energyDataType as $type) {
 	foreach($energyDataSpan as $span) {
 		// linear interpolated energy 
-		calculateEnergyLinearInterpolated($energyDataV2[$type][$span],$aktuelleDaten["Power"][$type],$timeStampPowerFlow,$energyDataV2[$type]["Power"],$energyDataV2["Timestamp"]["epoche"]);
+		calculateEnergyLinearInterpolated($energyData[$type][$span],$aktuelleDaten["Power"][$type],$timeStampPowerFlow,$energyData[$type]["Power"],$energyData["Timestamp"]["epoche"]);
 		// store power for next calculation
-		$energyDataV2[$type]["Power"] = $aktuelleDaten["Power"][$type];
+		$energyData[$type]["Power"] = $aktuelleDaten["Power"][$type];
 	}
   }
-  $energyDataV2["Timestamp"]["epoche"] = $timeStampPowerFlow;
+  $energyData["Timestamp"]["epoche"] = $timeStampPowerFlow;
 
 
 
@@ -753,10 +703,6 @@ do {
   $aktuelleDaten["InfluxDBLokal"] = $InfluxDBLokal;
   $aktuelleDaten["InfluxSSL"] = $InfluxSSL;
   $aktuelleDaten["Demodaten"] = false;
-
-
-
-
 
 
   /*********************************************************************
@@ -809,10 +755,6 @@ do {
 
 
 
-
-
-
-
 if (isset($aktuelleDaten["Firmware"]) and isset($aktuelleDaten["Regler"])) {
 
   /*********************************************************************
@@ -842,34 +784,8 @@ else {
 }
 
 
-$day = date("j",$timeStampPowerFlow);
-$month = date("n",$timeStampPowerFlow);
-$year = date("Y",$timeStampPowerFlow);
-$epoche = $timeStampPowerFlow;
-
-$deltaTime = $epoche - $energyData["Timestamp"]["epoche"];
-if( $deltaTime != 60 ) {
-	$funktionen->log_schreiben("DeltaTime ".$deltaTime." != 60s","   ",8);
-}
-$energyData["Timestamp"]["epoche"] = $epoche;
-// $energyData["Timestamp"]["Day"] = $day;
-
-onTimestampChangedUpdateAndResetCounter($energyData,"Day",$day);
-onTimestampChangedUpdateAndResetCounter($energyData,"Month",$month);
-onTimestampChangedUpdateAndResetCounter($energyData,"Year",$year);
-
-foreach($energyDataType as $type) {
-	foreach($energyDataSpan as $span) {
-		calculateEnergy($energyData[$type][$span],$aktuelleDaten["Power"][$type]);
-	}
-	// $energyData[$type]["Month"] = $energyData[$type]["Year"];
-}
-
 writeIniFile($energyDataFile,$energyData);
-$funktionen->log_schreiben(print_r($energyData,1),"*- ",8);
-
-writeIniFile($energyDataFileV2,$energyDataV2);
-$funktionen->log_schreiben("energyDataV2 => ".print_r($energyDataV2,1),"*- ",8);
+$funktionen->log_schreiben("energyData => ".print_r($energyData,1),"*- ",8);
 
 Ausgang:
 
