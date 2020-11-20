@@ -1,6 +1,5 @@
 #!/usr/bin/php
 <?php
-
 /*****************************************************************************
 //  Solaranzeige Projekt             Copyright (C) [2016-2020]  [Ulrich Kunz]
 //
@@ -19,9 +18,8 @@
 //
 //  Dies ist ein Programmteil des Programms "Solaranzeige"
 //
-//  Es dient dem Auslesen der Wallbe Wallbox über das LAN
-//  Port 502 GeräteID = 255
-//
+//  Es dient dem Auslesen der Phoenix Contact Wallbox über das LAN
+//  
 //  Das Auslesen wird hier mit einer Schleife durchgeführt. Wie oft die Daten
 //  ausgelesen und gespeichert werden steht in der user.config.php
 //
@@ -48,7 +46,7 @@ $RemoteDaten = true;
 $aktuelleDaten = array();
 $Version = "";
 $Start = time();  // Timestamp festhalten
-$funktionen->log_schreiben("-------------   Start  wallbe_wallbox.php   --------------------- ","|--",6);
+$funktionen->log_schreiben("-----------------   Start  phoenix_wb.php   --------------------- ","|--",6);
 setlocale(LC_TIME,"de_DE.utf8");
 
 
@@ -79,10 +77,14 @@ switch($Version) {
   break;
 }
 
+// Feste Phoenix Contact Wallbox Adresse = 180
+$WR_ID = "B4";  // Dezimal 180
+
+
 
 $COM1 = fsockopen($WR_IP, $WR_Port, $errno, $errstr, 5);
 if (!is_resource($COM1)) {
-  $funktionen->log_schreiben("Kein Kontakt zur Wallbox ".$WR_IP."  Port: ".$WR_Port,"XX ",3);
+  $funktionen->log_schreiben("Kein Kontakt zur Wallbox ".$WR_IP."  Port: ".$WR_Port." GeräteID: ".$WR_ID,"XX ",3);
   $funktionen->log_schreiben("Exit.... ","XX ",3);
   goto Ausgang;
 }
@@ -156,16 +158,16 @@ if (file_exists($Pfad."/../pipe/".$GeraeteNummer.".befehl.steuerung")) {
 
       if (strtolower($Teile[0]) == "start") {
         if ($Teile[1] == 0) {
-          $sendenachricht = hex2bin("000100000006FF0501900000");  //  Ladung unterbrechen
+          $sendenachricht = hex2bin("000100000006".$WR_ID."0501900000");  //  Ladung unterbrechen
         }
         else {
-          $sendenachricht = hex2bin("000100000006FF050190FF00");  //  Ladung einschalten
+          $sendenachricht = hex2bin("000100000006".$WR_ID."050190FF00");  //  Ladung einschalten
         }
       }
       if (strtolower($Teile[0]) == "amp") {
         $Ampere = floor($Teile[1]/100);
         $AmpHex = str_pad(dechex($Ampere),4,"0",STR_PAD_LEFT);
-        $sendenachricht = hex2bin("000100000006FF060210".$AmpHex);  //  30 = 1E = 3 Ampere
+        $sendenachricht = hex2bin("000100000006".$WR_ID."060210".$AmpHex);  //  30 = 1E = 3 Ampere
 
       }
       $rc = fwrite($COM1, $sendenachricht);
@@ -185,11 +187,6 @@ else {
 
 
 
-
-
-
-
-
 $i = 1;
 do {
 
@@ -197,114 +194,123 @@ do {
   //  Ab hier wird die Wallbox ausgelesen.
   //
   ***************************************************************************/
-  $funktionen->log_schreiben("Abfrage: ".$data,"   ",9);
+  $funktionen->log_schreiben("Abfrage der Daten. ","   ",8);
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0100","0001","String2","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0100","0001","String2",$WR_ID,"04");
   $aktuelleDaten["Status"] = trim($rc["Wert"]);
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0102","0002","Dec32Bit","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0102","0002","Dec32Bit",$WR_ID,"04");
   $aktuelleDaten["Ladezeit"] = trim($rc["Wert"]);
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0105","0002","String2","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0105","0002","Dec32Bit",$WR_ID,"04");
   $aktuelleDaten["Firmware"] = trim($rc["Wert"]);
 
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0107","0001","Dec16Bit","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0107","0001","Dec16Bit",$WR_ID,"04");
   $aktuelleDaten["ErrorCode"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0108","0002","Dec32Bit","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0108","0002","Dec32Bit",$WR_ID,"04");
   $aktuelleDaten["Spannung_R"] = $rc["Wert"];
 
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0110","0002","Dec32Bit","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0110","0002","Dec32Bit",$WR_ID,"04");
   $aktuelleDaten["Spannung_S"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0112","0002","Dec32Bit","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0112","0002","Dec32Bit",$WR_ID,"04");
   $aktuelleDaten["Spannung_T"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0114","0002","Dec32Bit","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0114","0002","Dec32Bit",$WR_ID,"04");
   $aktuelleDaten["Strom_R"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0116","0002","Dec32Bit","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0116","0002","Dec32Bit",$WR_ID,"04");
   $aktuelleDaten["Strom_S"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0118","0002","Dec32Bit","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0118","0002","Dec32Bit",$WR_ID,"04");
   $aktuelleDaten["Strom_T"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0120","0002","Dec32Bit","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0120","0002","Dec32Bit",$WR_ID,"04");
   $aktuelleDaten["Leistung"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0128","0002","Dec32Bit","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0128","0002","Dec32Bit",$WR_ID,"04");
   $aktuelleDaten["GesamtLeistung"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0130","0002","Dec32Bit","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0130","0002","Dec32Bit",$WR_ID,"04");
   $aktuelleDaten["MaxLeistung"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0132","0002","Dec32Bit","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0132","0002","Dec32Bit",$WR_ID,"04");
   $aktuelleDaten["LadeLeistung"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0134","0002","Dec32Bit","FF","04");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0134","0002","Dec32Bit",$WR_ID,"04");
   $aktuelleDaten["Frequenz"] = $rc["Wert"];
 
+  $aktuelleDaten["Ladestrom"] = ($rc["Wert"]);
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0300","0001","Dec16Bit","FF","03");
-  $aktuelleDaten["Ladestrom"] = ($rc["Wert"]/10);
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0304","0006","String2",$WR_ID,"03");
+  $aktuelleDaten["Seriennummer"] = ($rc["Wert"]);
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0525","0001","Dec16Bit","FF","03");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0310","0005","String2",$WR_ID,"03");
+  $aktuelleDaten["GeraeteName"] = trim($rc["Wert"],"\0");
+
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0337","0001","Dec16Bit",$WR_ID,"03");
+  $aktuelleDaten["Meter_Leistung"] = ($rc["Wert"]);
+
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0364","0001","Float",$WR_ID,"03");
+  $aktuelleDaten["Meter_Leistung_Faktor"] = ($rc["Wert"]);
+
+
+
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0525","0001","Dec16Bit",$WR_ID,"03");
   $aktuelleDaten["Locktime"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0526","0001","Dec16Bit","FF","03");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0526","0001","Dec16Bit",$WR_ID,"03");
   $aktuelleDaten["Unlocktime"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0528","0001","Dec16Bit","FF","03");
-  $aktuelleDaten["MaxLadestrom"] = ($rc["Wert"]/10);
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0300","0001","Dec16Bit",$WR_ID,"03");
+  $aktuelleDaten["MaxLadestrom"] = ($rc["Wert"]);
 
 
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0400","0001","Dec16Bit","FF","01");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0400","0001","Dec16Bit",$WR_ID,"01");
   $aktuelleDaten["LadungAktiv"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0402","0001","Dec16Bit","FF","01");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0402","0001","Dec16Bit",$WR_ID,"01");
   $aktuelleDaten["LadestationEin"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0403","0001","Dec16Bit","FF","01");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0403","0001","Dec16Bit",$WR_ID,"01");
   $aktuelleDaten["PerModbusAktiviert"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0405","0001","Dec16Bit","FF","01");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0405","0001","Dec16Bit",$WR_ID,"01");
   $aktuelleDaten["StatusRegister1steuern"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0406","0001","Dec16Bit","FF","01");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0406","0001","Dec16Bit",$WR_ID,"01");
   $aktuelleDaten["StatusRegister2steuern"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0407","0001","Dec16Bit","FF","01");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0407","0001","Dec16Bit",$WR_ID,"01");
   $aktuelleDaten["StatusRegister3steuern"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0408","0001","Dec16Bit","FF","01");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0408","0001","Dec16Bit",$WR_ID,"01");
   $aktuelleDaten["StatusRegister4steuern"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0436","0001","Dec16Bit","FF","01");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0436","0001","Dec16Bit",$WR_ID,"01");
   $aktuelleDaten["Ladung_erlaubt"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0439","0001","Dec16Bit","FF","01");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0439","0001","Dec16Bit",$WR_ID,"01");
   $aktuelleDaten["Kabel_angeschlossen"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0440","0001","Dec16Bit","FF","01");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0440","0001","Dec16Bit",$WR_ID,"01");
   $aktuelleDaten["Kabel_entriegeln"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0461","0001","Dec16Bit","FF","01");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0461","0001","Dec16Bit",$WR_ID,"01");
   $aktuelleDaten["AufOKwarten"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0465","0001","Dec16Bit","FF","01");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0465","0001","Dec16Bit",$WR_ID,"01");
   $aktuelleDaten["Kabel_verriegelt"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0467","0001","Dec16Bit","FF","01");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0467","0001","Dec16Bit",$WR_ID,"01");
   $aktuelleDaten["Ladung_unterbrochen"] = $rc["Wert"];
 
-  $rc = $funktionen-> modbus_register_lesen($COM1,"0468","0001","Dec16Bit","FF","01");
+  $rc = $funktionen-> modbus_register_lesen($COM1,"0468","0001","Dec16Bit",$WR_ID,"01");
   $aktuelleDaten["Ladung_unterbrechen"] = $rc["Wert"];
-
-
-  // print_r($aktuelleDaten);
 
 
 
@@ -312,6 +318,7 @@ do {
   //  Ende Wallbox auslesen
   ***************************************************************************/
 
+  $aktuelleDaten["Ladestrom"] = $aktuelleDaten["Strom_R"];
 
 
   $FehlermeldungText = "";
@@ -322,7 +329,7 @@ do {
   ****************************************************************************/
   $aktuelleDaten["Regler"] = $Regler;
   $aktuelleDaten["Objekt"] = $Objekt;
-  $aktuelleDaten["Produkt"] = "Wallbe";
+  $aktuelleDaten["Produkt"] = "Phoenix";
 
   $aktuelleDaten["WattstundenGesamtHeute"] = 0;  // dummy
 
@@ -451,7 +458,7 @@ else {
 
 Ausgang:
 
-$funktionen->log_schreiben("-------------   Stop   wallbe_wallbox.php   --------------------- ","|--",6);
+$funktionen->log_schreiben("-----------------   Stop   phoenix_wb.php   --------------------- ","|--",6);
 
 return;
 

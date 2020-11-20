@@ -143,70 +143,6 @@ do {
   $aktuelleDaten["Firmware"] = $rc["APIVersion"];
 
 
-  $URL  = "solar_api/v1/GetInverterRealtimeData.cgi";
-  $URL .= "?Scope=Device";
-  $URL .= "&DeviceID=".$WR_Adresse;
-  $URL .= "&DataCollection=CumulationInverterData";
-
-  $JSON_Daten = $funktionen->read($WR_IP,$WR_Port,$URL);
-  if (isset($JSON_Daten["Head"]["Status"]["Code"]) and $JSON_Daten["Head"]["Status"]["Code"] == 0) {
-    // Es handelt sich um gültige Daten
-    $funktionen->log_schreiben(print_r($JSON_Daten,1),"   ",10);
-
-      $aktuelleDaten["WattstundenGesamtHeute"] = $JSON_Daten["Body"]["Data"]["DAY_ENERGY"]["Value"];
-      $aktuelleDaten["WattstundenGesamtJahr"] = $JSON_Daten["Body"]["Data"]["YEAR_ENERGY"]["Value"];
-      $aktuelleDaten["WattstundenGesamt"] = $JSON_Daten["Body"]["Data"]["TOTAL_ENERGY"]["Value"];
-      $aktuelleDaten["Geraetestatus"] = $JSON_Daten["Body"]["Data"]["DeviceStatus"]["StatusCode"];
-      $aktuelleDaten["ErrorCodes"] = $JSON_Daten["Body"]["Data"]["DeviceStatus"]["ErrorCode"];
-  }
-  else {
-    break;
-  }
-
-
-
-
-
-
-  $URL  = "solar_api/v1/GetInverterRealtimeData.cgi";
-  $URL .= "?Scope=Device";
-  $URL .= "&DeviceID=".$WR_Adresse;
-  $URL .= "&DataCollection=CommonInverterData";
-
-  $JSON_Daten = $funktionen->read($WR_IP,$WR_Port,$URL);
-  if (isset($JSON_Daten["Head"]["Status"]["Code"]) and $JSON_Daten["Head"]["Status"]["Code"] == 0) {
-    // Es handelt sich um gültige Daten
-    $funktionen->log_schreiben(print_r($JSON_Daten,1),"   ",10);
-
-      $aktuelleDaten["AC_Wirkleistung"] = $JSON_Daten["Body"]["Data"]["PAC"]["Value"];
-      $aktuelleDaten["AC_Ausgangsstrom"] = $JSON_Daten["Body"]["Data"]["IAC"]["Value"];
-      $aktuelleDaten["AC_Ausgangsspannung"] = $JSON_Daten["Body"]["Data"]["UAC"]["Value"];
-      $aktuelleDaten["AC_Ausgangsfrequenz"] = $JSON_Daten["Body"]["Data"]["FAC"]["Value"];
-      $aktuelleDaten["Solarstrom"] = $JSON_Daten["Body"]["Data"]["IDC"]["Value"];
-      $aktuelleDaten["Solarspannung"] = $JSON_Daten["Body"]["Data"]["UDC"]["Value"];
-      $aktuelleDaten["Geraetestatus"] = $JSON_Daten["Body"]["Data"]["DeviceStatus"]["StatusCode"];
-      $aktuelleDaten["ErrorCodes"] = $JSON_Daten["Body"]["Data"]["DeviceStatus"]["ErrorCode"];
-  }
-  else {
-    break;
-  }
-
-
-  $URL  = "solar_api/v1/GetInverterInfo.cgi";
-
-  $JSON_Daten = $funktionen->read($WR_IP,$WR_Port,$URL);
-  if (isset($JSON_Daten["Head"]["Status"]["Code"]) and $JSON_Daten["Head"]["Status"]["Code"] == 0) {
-    // Es handelt sich um gültige Daten
-    $funktionen->log_schreiben(print_r($JSON_Daten,1),"   ",10);
-
-       $aktuelleDaten["ModulPVLeistung"] = $JSON_Daten["Body"]["Data"][$WR_Adresse]["PVPower"];
-  }
-  else {
-    break;
-  }
-
-
-
   $URL  = "solar_api/v1/GetArchiveData.cgi";
   $URL .= "?Scope=System";
   $URL .= "&StartDate=".date(DATE_RFC3339,time()-400);
@@ -229,10 +165,93 @@ do {
         $aktuelleDaten["Solarstrom_String_2"] = end($JSON_Daten["Body"]["Data"]["inverter/".$WR_Adresse]["Data"]["Current_DC_String_2"]["Values"]);
       }
       $aktuelleDaten["Temperatur"] = end($JSON_Daten["Body"]["Data"]["inverter/".$WR_Adresse]["Data"]["Temperature_Powerstage"]["Values"]);
+    $aktuelleDaten["Gen24"] = false;
+  }
+  else {
+    $aktuelleDaten["Gen24"] = true;
+    $aktuelleDaten["Temperatur"] = 0;
+  }
+
+
+
+
+
+  $URL  = "solar_api/v1/GetInverterRealtimeData.cgi";
+  $URL .= "?Scope=Device";
+  $URL .= "&DeviceID=".$WR_Adresse;
+  $URL .= "&DataCollection=CumulationInverterData";
+
+  $JSON_Daten = $funktionen->read($WR_IP,$WR_Port,$URL);
+  if (isset($JSON_Daten["Head"]["Status"]["Code"]) and $JSON_Daten["Head"]["Status"]["Code"] == 0 and $aktuelleDaten["Gen24"] == false) {
+    // Es handelt sich um gültige Daten
+    $funktionen->log_schreiben(print_r($JSON_Daten,1),"   ",10);
+    $aktuelleDaten["Geraetestatus"] = $JSON_Daten["Body"]["Data"]["DeviceStatus"]["StatusCode"];
+    $aktuelleDaten["WattstundenGesamtHeute"] = $JSON_Daten["Body"]["Data"]["DAY_ENERGY"]["Value"];
+    $aktuelleDaten["WattstundenGesamtJahr"] = $JSON_Daten["Body"]["Data"]["YEAR_ENERGY"]["Value"];
+    $aktuelleDaten["WattstundenGesamt"] = $JSON_Daten["Body"]["Data"]["TOTAL_ENERGY"]["Value"];
+    $aktuelleDaten["ErrorCodes"] = $JSON_Daten["Body"]["Data"]["DeviceStatus"]["ErrorCode"];
+  }
+  else {
+    $aktuelleDaten["WattstundenGesamtHeute"] = 0;
+    $aktuelleDaten["WattstundenGesamtJahr"] = 0;
+    $aktuelleDaten["WattstundenGesamt"] = 0;
+    $aktuelleDaten["ErrorCodes"] = 0;
+    $aktuelleDaten["Geraetestatus"] = 0;
+  }
+
+
+
+  $URL  = "solar_api/v1/GetInverterRealtimeData.cgi";
+  $URL .= "?Scope=Device";
+  $URL .= "&DeviceID=".$WR_Adresse;
+  $URL .= "&DataCollection=CommonInverterData";
+
+  $JSON_Daten = $funktionen->read($WR_IP,$WR_Port,$URL);
+  if (isset($JSON_Daten["Head"]["Status"]["Code"]) and $JSON_Daten["Head"]["Status"]["Code"] == 0) {
+    // Es handelt sich um gültige Daten
+    $funktionen->log_schreiben(print_r($JSON_Daten,1),"   ",10);
+      $aktuelleDaten["AC_Ausgangsfrequenz"] = 0;
+      $aktuelleDaten["Solarspannung_String_2"] = 0;
+      $aktuelleDaten["Solarstrom_String_2"] = 0;
+
+      $aktuelleDaten["AC_Wirkleistung"] = $JSON_Daten["Body"]["Data"]["PAC"]["Value"];
+      $aktuelleDaten["AC_Ausgangsstrom"] = $JSON_Daten["Body"]["Data"]["IAC"]["Value"];
+      $aktuelleDaten["AC_Ausgangsspannung"] = $JSON_Daten["Body"]["Data"]["UAC"]["Value"];
+      if (isset($JSON_Daten["Body"]["Data"]["FAC"]["Value"])) {
+        $aktuelleDaten["AC_Ausgangsfrequenz"] = $JSON_Daten["Body"]["Data"]["FAC"]["Value"];
+      }
+      $aktuelleDaten["Solarstrom"] = $JSON_Daten["Body"]["Data"]["IDC"]["Value"];
+      $aktuelleDaten["Solarspannung"] = $JSON_Daten["Body"]["Data"]["UDC"]["Value"];
+      $aktuelleDaten["Solarspannung_String_1"] = $JSON_Daten["Body"]["Data"]["UDC"]["Value"];
+      $aktuelleDaten["Solarstrom_String_1"] =  $JSON_Daten["Body"]["Data"]["IDC"]["Value"];
+      if (isset($JSON_Daten["Body"]["Data"]["UDC_2"]["Value"])) {
+        $aktuelleDaten["Solarspannung_String_2"] = $JSON_Daten["Body"]["Data"]["UDC_2"]["Value"];
+        $aktuelleDaten["Solarstrom_String_2"] = $JSON_Daten["Body"]["Data"]["IDC_2"]["Value"];
+      }
+      if ($aktuelleDaten["Gen24"] == false) {
+        $aktuelleDaten["Geraetestatus"] = $JSON_Daten["Body"]["Data"]["DeviceStatus"]["StatusCode"];
+        $aktuelleDaten["ErrorCodes"] = $JSON_Daten["Body"]["Data"]["DeviceStatus"]["ErrorCode"];
+      }
   }
   else {
     break;
   }
+
+
+  $URL  = "solar_api/v1/GetInverterInfo.cgi";
+
+  $JSON_Daten = $funktionen->read($WR_IP,$WR_Port,$URL);
+  if (isset($JSON_Daten["Head"]["Status"]["Code"]) and $JSON_Daten["Head"]["Status"]["Code"] == 0) {
+    // Es handelt sich um gültige Daten
+    $funktionen->log_schreiben(print_r($JSON_Daten,1),"   ",10);
+
+       $aktuelleDaten["ModulPVLeistung"] = $JSON_Daten["Body"]["Data"][$WR_Adresse]["PVPower"];
+       $aktuelleDaten["Gen24Status"] = $JSON_Daten["Body"]["Data"][$WR_Adresse]["StatusCode"];
+  }
+  else {
+    break;
+  }
+
 
 
 
@@ -244,13 +263,21 @@ do {
     // Es handelt sich um gültige Daten
     $funktionen->log_schreiben(print_r($JSON_Daten,1),"   ",10);
 
-    $aktuelleDaten["Inverter"] = count($JSON_Daten["Body"]["Data"]["Inverter"]);
     $aktuelleDaten["Meter"] = count($JSON_Daten["Body"]["Data"]["Meter"]);
-    $aktuelleDaten["StringControl"] = count($JSON_Daten["Body"]["Data"]["StringControl"]);
     $aktuelleDaten["Ohmpilot"] = count($JSON_Daten["Body"]["Data"]["Ohmpilot"]);
-    $aktuelleDaten["SensorCard"] = count($JSON_Daten["Body"]["Data"]["SensorCard"]);
     $aktuelleDaten["Storage"] = count($JSON_Daten["Body"]["Data"]["Storage"]);
-    $aktuelleDaten["InverterID"] = $JSON_Daten["Body"]["Data"]["Inverter"][$WR_Adresse]["DT"];
+    if ($aktuelleDaten["Gen24"] == false) {
+      $aktuelleDaten["SensorCard"] = count($JSON_Daten["Body"]["Data"]["SensorCard"]);
+      $aktuelleDaten["StringControl"] = count($JSON_Daten["Body"]["Data"]["StringControl"]);
+      $aktuelleDaten["Inverter"] = count($JSON_Daten["Body"]["Data"]["Inverter"]);
+      $aktuelleDaten["InverterID"] = $JSON_Daten["Body"]["Data"]["Inverter"][$WR_Adresse]["DT"];
+    }
+    else {
+      $aktuelleDaten["SensorCard"] = 0;
+      $aktuelleDaten["StringControl"] = 0;
+      $aktuelleDaten["Inverter"] = 0;
+      $aktuelleDaten["InverterID"] = 0;
+    }
   }
   else {
     break;
@@ -298,20 +325,30 @@ do {
       $funktionen->log_schreiben(print_r($JSON_Daten,1),"   ",10);
 
       if (isset($JSON_Daten["Body"]["Data"]["0"])) {  // Channel 0
-        $aktuelleDaten["Meter_Wirkleistung"] = $JSON_Daten["Body"]["Data"]["0"]["PowerReal_P_Sum"];
-        if (isset($JSON_Daten["Body"]["Data"]["0"]["PowerReactive_Q_Sum"])) {
-          $aktuelleDaten["Meter_Scheinleistung"] = $JSON_Daten["Body"]["Data"]["0"]["PowerReactive_Q_Sum"];
-          $aktuelleDaten["Meter_Blindleistung"] = $JSON_Daten["Body"]["Data"]["0"]["PowerApparent_S_Sum"];
-          $aktuelleDaten["Meter_EnergieProduziert"] = $JSON_Daten["Body"]["Data"]["0"]["EnergyReal_WAC_Sum_Produced"];
-          $aktuelleDaten["Meter_EnergieVerbraucht"] = $JSON_Daten["Body"]["Data"]["0"]["EnergyReal_WAC_Sum_Consumed"];
+        if ($aktuelleDaten["Gen24"] == true) {
+          $aktuelleDaten["Meter_Wirkleistung"] = $JSON_Daten["Body"]["Data"]["0"]["SMARTMETER_POWERACTIVE_MEAN_SUM_F64"];
+          $aktuelleDaten["Meter_Scheinleistung"] = $JSON_Daten["Body"]["Data"]["0"]["SMARTMETER_POWERREACTIVE_MEAN_SUM_F64"];
+          $aktuelleDaten["Meter_Blindleistung"] = $JSON_Daten["Body"]["Data"]["0"]["SMARTMETER_POWERAPPARENT_MEAN_SUM_F64"];
+          $aktuelleDaten["Meter_EnergieProduziert"] = $JSON_Daten["Body"]["Data"]["0"]["SMARTMETER_ENERGYACTIVE_PRODUCED_SUM_F64"];
+          $aktuelleDaten["Meter_EnergieVerbraucht"] = $JSON_Daten["Body"]["Data"]["0"]["SMARTMETER_ENERGYACTIVE_CONSUMED_SUM_F64"];
+          $aktuelleDaten["WattstundenGesamt"] = $JSON_Daten["Body"]["Data"]["0"]["SMARTMETER_ENERGYACTIVE_PRODUCED_SUM_F64"];
         }
         else {
-          $aktuelleDaten["Meter_Scheinleistung"] = 0;
-          $aktuelleDaten["Meter_Blindleistung"] = 0;
-          $aktuelleDaten["Meter_EnergieProduziert"] = 0;
-          $aktuelleDaten["Meter_EnergieVerbraucht"] = 0;
-        }
+          $aktuelleDaten["Meter_Wirkleistung"] = $JSON_Daten["Body"]["Data"]["0"]["PowerReal_P_Sum"];
+          if (isset($JSON_Daten["Body"]["Data"]["0"]["PowerReactive_Q_Sum"])) {
+            $aktuelleDaten["Meter_Scheinleistung"] = $JSON_Daten["Body"]["Data"]["0"]["PowerReactive_Q_Sum"];
+            $aktuelleDaten["Meter_Blindleistung"] = $JSON_Daten["Body"]["Data"]["0"]["PowerApparent_S_Sum"];
+            $aktuelleDaten["Meter_EnergieProduziert"] = $JSON_Daten["Body"]["Data"]["0"]["EnergyReal_WAC_Sum_Produced"];
+            $aktuelleDaten["Meter_EnergieVerbraucht"] = $JSON_Daten["Body"]["Data"]["0"]["EnergyReal_WAC_Sum_Consumed"];
+          }
+          else {
+            $aktuelleDaten["Meter_Scheinleistung"] = 0;
+            $aktuelleDaten["Meter_Blindleistung"] = 0;
+            $aktuelleDaten["Meter_EnergieProduziert"] = 0;
+            $aktuelleDaten["Meter_EnergieVerbraucht"] = 0;
+          }
 
+        }
       }
       elseif (isset($JSON_Daten["Body"]["Data"]["1"])) {  //  Channel 1
         $aktuelleDaten["Meter_Wirkleistung"] = $JSON_Daten["Body"]["Data"]["1"]["PowerReal_P_Sum"];
@@ -338,7 +375,7 @@ do {
 
 
 
-  if ($aktuelleDaten["Ohmpilot"] == 1)  {
+  if ($aktuelleDaten["Ohmpilot"] == 1 and $aktuelleDaten["Gen24"] == false)  {
 
     $URL  = "/solar_api/v1/GetOhmPilotRealtimeData.cgi";
     $URL .= "?Scope=System";
@@ -364,14 +401,13 @@ do {
   $URL  = "/solar_api/v1/GetStringRealtimeData.cgi";
   $URL .= "?Scope=System";
   $URL .= "&DataCollection=NowStringControlData";
-  $funktionen->log_schreiben(print_r($funktionen->read($WR_IP,$WR_Port,$URL),1),"   ",10);
+  $JSON_Daten = $funktionen->read($WR_IP,$WR_Port,$URL);
 
+  // $funktionen->log_schreiben(print_r($JSON_Daten,1),"   ",10);
 
-
-  foreach($aktuelleDaten as $key=>$wert) {
-    if (empty($wert))  {
-      $aktuelleDaten[$key] = 0;
-    }
+  if (isset($JSON_Daten["Head"]["Status"]["Code"]) and $JSON_Daten["Head"]["Status"]["Code"] == 255) {
+      $funktionen->log_schreiben("URL: ".$URL,"   ",8);
+      $funktionen->log_schreiben("Nachricht: ".$JSON_Daten["Head"]["Status"]["Reason"],"   ",8);
   }
 
 
@@ -398,10 +434,26 @@ do {
       }
     }
     else {
-      break;
+      $funktionen->log_schreiben("URL: ".$URL,"   ",8);
+      $funktionen->log_schreiben("Nachricht: ".$JSON_Daten["Head"]["Status"]["Reason"],"   ",8);
+      $aktuelleDaten["Batterie_Max_Kapazitaet"] = 0;
+      $aktuelleDaten["Batterie_Strom_DC"] = 0;
+      $aktuelleDaten["Batterie_Hersteller"] = 0;
+      $aktuelleDaten["Batterie_Seriennummer"] = 0;
+      $aktuelleDaten["Batterie_StateOfCharge_Relative"] = 0;
+      $aktuelleDaten["Batterie_Status_Batteriezellen"] = 0;
+      $aktuelleDaten["Batterie_Zellentemperatur"] = 0;
+      $aktuelleDaten["Batterie_Spannung_DC"] = 0;
     }
   }
 
+
+
+  foreach($aktuelleDaten as $key=>$wert) {
+    if (empty($wert))  {
+      $aktuelleDaten[$key] = 0;
+    }
+  }
 
 
   /****************************************************************************
@@ -444,12 +496,16 @@ do {
   /****************************************************************************
   //  Die Daten werden für die Speicherung vorbereitet.
   ****************************************************************************/
-  $aktuelleDaten["Produkt"] = "Fronius Symo";
+  if ($aktuelleDaten["Gen24"] == true) {
+    $aktuelleDaten["Produkt"] = "Fronius Symo Gen24";
+  }
+  else {
+    $aktuelleDaten["Produkt"] = "Fronius Symo";
+  }
   $aktuelleDaten["Regler"] = $Regler;
   $aktuelleDaten["Objekt"] = $Objekt;
 
 
-  $funktionen->log_schreiben(print_r($aktuelleDaten,1),"*- ",8);
 
 
   /**************************************************************************
@@ -489,7 +545,7 @@ do {
   $aktuelleDaten["Demodaten"] = false;
 
 
-
+  $funktionen->log_schreiben(print_r($aktuelleDaten,1),"*- ",8);
 
 
 

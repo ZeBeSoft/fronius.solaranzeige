@@ -283,6 +283,15 @@ for ($mra_i = 1; $mra_i < 7; $mra_i++) {
         require($Pfad."/huawei.php");
       break;
 
+      case 47:
+        // Phoenix Contact Wallbox
+        require($Pfad."/phoenix_wb.php");
+      break;
+
+      case 48:
+        // Growatt Wechselrichter
+        require($Pfad."/growatt.php");
+      break;
 
 
       default:

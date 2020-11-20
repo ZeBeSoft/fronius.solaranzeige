@@ -271,6 +271,16 @@ switch ($Regler) {
     require($Pfad."/huawei.php");
   break;
 
+  case 47:
+    // Phoenix Contact Wallbox
+    require($Pfad."/phoenix_wb.php");
+  break;
+
+  case 48:
+    // Growatt Wechselrichter
+    require($Pfad."/growatt.php");
+  break;
+
 
   default:
     require($Pfad."/fehler.php");

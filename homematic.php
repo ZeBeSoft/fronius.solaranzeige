@@ -85,7 +85,7 @@
 //  Bezug
 //
 //
-//  Wechselrichter                        No. 7, 8
+//  Wechselrichter                         No. 7, 8
 //---------------------------------------------------
 //  Batteriespannung
 //  Solarleistung
@@ -215,17 +215,36 @@
 //
 //
 //
+//  MPPSolar 5048                       No. 26
+//--------------------------------------------------
+//  Batteriespannung            Volt
+//  Solarleistung               Watt
+//  SolarleistungTag            Wh
+//  Netzspannung                Volt
+//  Netzfrequenz                Herz
+//  acAusgangsspannung          Volt
+//  acAusgangsfrequenz          Herz
+//  acWirkleistung              Watt
+//  Batteriekapazitaet          %
+//  Temperatur                  °C
+//  BatterieLadestrom           Ampere
+//  Solarspannung               Volt
+//  Status                      Zahl
+//
+//
+//
+//
 //  SMA Tripower                        No. 27
 //--------------------------------------------------
-//  AC_Spannung			Volt
-//  AC_Leistung			Watt
-//  Einspeisung			Watt
-//  Bezug			Watt
-//  DC_Leistung1   		Watt
-//  DC_Leistung2   		Watt
-//  Geraetestatus		Zahl
-//  Temperatur			°C
-//  LeistungTag			Wh
+//  AC_Spannung			        Volt
+//  AC_Leistung			        Watt
+//  Einspeisung			        Watt
+//  Bezug			            Watt
+//  DC_Leistung1   		        Watt
+//  DC_Leistung2   		        Watt
+//  Geraetestatus		        Zahl
+//  Temperatur			        °C
+//  LeistungTag			        Wh
 //
 //
 //
@@ -275,6 +294,23 @@
 //  Wirkleistung_Gesamt         Watt
 //  Relaisstatus                ( 0/1 )
 //
+//
+//  Kaco Wechselrichter                No. 32
+//--------------------------------------------------
+//  AC_Ausgangsstrom            Ampere
+//  AC_Ausgangsspannung_R       Volt
+//  AC_Ausgangsspannung_S       Volt
+//  AC_Ausgangsspannung_T       Volt
+//  AC_Frequenz                 Herz
+//  AC_Leistung                 Watt
+//  AC_Leistungsfaktor          %
+//  WattstundenGesamtHeute      Wh
+//  Solarspannung               Volt
+//  Solarstrom                  Ampere
+//  Solarleistung               Watt
+//  Temperatur                  °C
+//  Status                      Zahl
+//  Warnungen                   Zahl
 //
 //
 //
@@ -999,6 +1035,68 @@ if ($HM_Verbindung) {
       }
       $DataString .= "&";
     }
+    elseif ($Regler == "26") {
+      switch ($Bezeichnung) {
+        case "Batteriespannung":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Batteriespannung"].")";
+        break;
+        case "Solarleistung":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Solarleistung"].")";
+        break;
+        case "SolarleistungTag":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["WattstundenGesamtHeute"].")";
+        break;
+        case "Netzspannung":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Netzspannung"].")";
+        break;
+        case "Netzfrequenz":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Netzfrequenz"].")";
+        break;
+        case "acAusgangsspannung":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["AC_Ausgangsspannung"].")";
+        break;
+        case "acAusgangsfrequenz":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["AC_Ausgangsfrequenz"].")";
+        break;
+        case "acWirkleistung":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["AC_Wirkleistung"].")";
+        break;
+        case "Batteriekapazitaet":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Batteriekapazitaet"].")";
+        break;
+        case "Temperatur":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Temperatur"].")";
+        break;
+        case "BatterieLadestrom":
+   	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Solarstrom"].")";
+        break;
+        case "Solarspannung":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Solarspannung"].")";
+        break;
+        case "Solarleistung":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Solarleistung"].")";
+        break;
+        case "Status":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Status"].")";
+        break;
+        case "Fehlermeldung":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Fehlermeldung"].")";
+        break;
+        case "Wind":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Wind"].")";
+        break;
+        case "Wolkendichte":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Wolkendichte"].")";
+        break;
+        case "AussenTemperatur":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["AussenTemperatur"].")";
+        break;
+        default:
+          $funktionen->log_schreiben("Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter,"   ",5);
+        break;
+      }
+      $DataString .= "&";
+    }
     elseif ($Regler == "27") {
       switch ($Bezeichnung) {
         case "Leistung":
@@ -1186,7 +1284,65 @@ if ($HM_Verbindung) {
       }
       $DataString .= "&";
     }
-
+    elseif ($Regler == "32") {
+      switch ($Bezeichnung) {
+        case "AC_Ausgangsspannung_R":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["AC_Ausgangsspannung_R"].")";
+        break;
+        case "AC_Ausgangsspannung_S":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["AC_Ausgangsspannung_S"].")";
+        break;
+        case "AC_Ausgangsspannung_T":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["AC_Ausgangsspannung_T"].")";
+        break;
+        case "AC_Ausgangsstrom":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Ausgangsstrom"].")";
+        break;
+        case "AC_Leistung":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["AC_Leistung"].")";
+        break;
+        case "AC_Frequenz":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["AC_Frequenz"].")";
+        break;
+        case "AC_Leistungsfaktor":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["AC_Leistungsfaktor"].")";
+        break;
+        case "WattstundenGesamtHeute":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["WattstundenGesamtHeute"].")";
+        break;
+        case "Solarspannung":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Solarspannung"].")";
+        break;
+        case "Solarleistung":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Solarleistung"].")";
+        break;
+        case "Solarstrom":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Solarstrom"].")";
+        break;
+        case "Temperatur":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Temperatur"].")";
+        break;
+        case "Status":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Status"].")";
+        break;
+        case "Warnungen":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Warnungen"].")";
+        break;
+        case "Wind":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Wind"].")";
+        break;
+        case "Wolkendichte":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["Wolkendichte"].")";
+        break;
+        case "AussenTemperatur":
+	      $DataString .= "Antwort".$i."=dom.GetObject('".$Parameter."').State(".$aktuelleDaten["AussenTemperatur"].")";
+        break;
+        default:
+          $funktionen->log_schreiben("Es gibt Probleme mit den HomeMatic Variablen! Bitte prüfen ob diese Variable auch zu Ihrem Regler gehört: ".$Parameter,"   ",5);
+        break;
+      }
+      $DataString .= "&";
+    }
 
   }
 

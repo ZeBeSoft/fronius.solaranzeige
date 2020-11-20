@@ -181,7 +181,7 @@ do {
   $aktuelleDaten["Status"] = round($funktionen->senec($rc["ENERGY"]["STAT_STATE"]),2);
 
   $http_daten["Data"] = '{"ENERGY":{"STAT_HOURS_OF_OPERATION":""}}';
-  $rc = $funktionen->http_read($http_daten);
+  $rc = $funktionen->http_read($http_daten);  
   $aktuelleDaten["Betriebsstunden"] = round($funktionen->senec($rc["ENERGY"]["STAT_HOURS_OF_OPERATION"]),2);
 
 

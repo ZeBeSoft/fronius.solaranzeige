@@ -55,6 +55,7 @@
 //  9067 => "STP 10000TL-10",
 //  9068 => "STP 12000TL-10",
 //  9069 => "STP 15000TL-10",
+//  9076 => "SB 5000TL-21",
 //  9070 => "STP 17000TL-10",
 //  9084 => "WB 3600TL-20",
 //  9085 => "WB 5000TL-20",
@@ -107,6 +108,7 @@
 //  9191 => "WTP 7000TL-20",
 //  9192 => "WTP 8000TL-20",
 //  9193 => "WTP 9000TL-20",
+//  9223 => "Sunny Island 6.0H",
 //  9254 => "Sunny Island 3324",
 //  9255 => "Sunny Island 4.0M",
 //  9256 => "Sunny Island 4248",
@@ -283,6 +285,8 @@ do {
   //  Befehl 03 = single Byte read
   //  UnitID 03 = default
   ****************************************************************************/
+  $aktuelleDaten["KeineSonne"] = false;  // Dummy
+
 
   $rc = $funktionen->modbus_register_lesen($COM1,"30005","0002","U32","03");
   $aktuelleDaten["Seriennummer"] = $rc["Wert"];

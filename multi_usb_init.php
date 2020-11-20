@@ -324,6 +324,23 @@ for ($i = 1; $i < 7; $i++) {
         $rc = exec("stty -F  ".$USBDevice." raw speed 9600 cs8 -iexten -echo -echoe -echok -onlcr -hupcl ignbrk time 5");
       break;
 
+      case 47:
+        $USBRegler = "Ethernet";     // Dummy
+        $USBDevice = "Ethernet";
+        // Phoenix Contact Wallbox
+      break;
+
+      case 48:
+        if (isset($USB_Regler)) {
+          $USBDevice = $USB_Regler;
+          $funktionen->log_schreiben("Regler erkannt: ".$USB_Regler,"   ",6);
+        }
+        elseif (!isset($USBDevice) or empty($USBDevice) ) {
+          $USBDevice = "/dev/ttyUSB0";
+        }
+        // Growatt Wechselrichter
+        $rc = exec("stty -F  ".$USBDevice." raw speed 9600 cs8  -iexten -echo -echoe -echok -onlcr -hupcl ignbrk time 5");
+      break;
 
       default:
         // echo "Fehler! Es muss ein gültiger Regler angegeben werden.";

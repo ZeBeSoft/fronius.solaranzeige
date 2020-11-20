@@ -19,8 +19,8 @@
 //
 //  Dies ist ein Programmteil des Programms "Solaranzeige"
 //
-//  Es dient dem Auslesen des KOSTAL Plenticore Wechselrichter über die
-//  LAN Schnittstelle.
+//  Es dient dem Auslesen des KACO Wechselrichter über die
+//  LAN Schnittstelle. ( MODBUS TCP )
 //  Das Auslesen wird hier mit einer Schleife durchgeführt. Wie oft die Daten
 //  ausgelesen und gespeichert werden steht in der user.config.php
 //

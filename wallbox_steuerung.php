@@ -193,6 +193,7 @@ for ($i=1; $i < 7; $i++) {
 
     log_schreiben("Datenbank: '".$wrDatenbankname."' ".print_r($DB1,1),"",4);
 
+    //  PV-Leistung
 
     switch ($wrRegler) {
 
@@ -230,6 +231,24 @@ for ($i=1; $i < 7; $i++) {
          $Solarleistung = $DB1["Leistung"];
        break;
        case 27:
+         $Solarleistung = $DB1["Leistung"];
+       break;
+       case 32:
+         $Solarleistung = $DB1["Leistung"];
+       break;
+       case 36:
+         $Solarleistung = $DB1["Leistung"];
+       break;
+       case 43:
+         $Solarleistung = $DB1["Leistung"];
+       break;
+       case 45:
+         $Solarleistung = $DB1["Leistung"];
+       break;
+       case 46:
+         $Solarleistung = $DB1["Leistung"];
+       break;
+       case 48:
          $Solarleistung = $DB1["Leistung"];
        break;
        default:
@@ -466,7 +485,8 @@ for ($i=1; $i < 7; $i++) {
        break;
 
        case 35:
-         //  Wallbe Wallbox 
+       case 47:
+         //  35 = Wallbe Wallbox   47 = Phoenix Contact 
          $LSAktiv = $DB4["LadungAktiv"];
          $FreigabeUser = $DB4["Ladung_erlaubt"];
          $MaxAmpere = ($DB4["MaxLadestrom"]*1000); // Stromvorgabe
@@ -1353,6 +1373,7 @@ function befehl_senden($Befehl,$Regler,$GeraeteID,$Wert) {
        break;
 
        case 35:
+       case 47:
          //  gesendet wird in Milliampere
          if ($Befehl == "Start") {
            $wbBefehl = "start_1\namp_".$Wert."\n";

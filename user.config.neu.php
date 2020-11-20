@@ -143,6 +143,10 @@
 //
 //  46 = Huawei SUN2000 Wechselrichter
 //
+//  47 = Phoenix Contact Wallbox
+//
+//  48 = Growatt Wechselrichter
+//
 //  ---------------------------------------------------------------------------
 //
 $Regler = "0";
@@ -168,7 +172,8 @@ $HF2211 = false;
 //  Nur bei PylonTech BMS US3000A       ($Regler = "41" )
 //  Anzahl der vorhandenen Batteriepacks
 //  -------------------------------------------------------------------
-$Batteriepacks = "1";
+$Batteriepacks = "1";// nur bei US3000A                   Regler = "41"
+$USBSpeed = "1200";  // "115200" nur bei US2000B ab 2019  Regler = "15"
 //
 //  Ethernet Kabelverbindung:          Local Area Network  (LAN)
 //  Alle Geräte, die über das LAN angesprochen und ausgelesen werden,

@@ -433,8 +433,8 @@ do {
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((56 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
-    sleep(floor((56 - (time() - $Start))/($Wiederholungen-$i+1)));
+    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor(((9*$i) - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+    sleep(floor(((9*$i) - (time() - $Start))/($Wiederholungen-$i+1)));
   }
   if ($Wiederholungen <= $i or $i >= 6) {
     $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",5);

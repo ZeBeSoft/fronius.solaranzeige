@@ -1110,6 +1110,9 @@ class funktionen{
           $query .= ",Eigenverbrauch=".$daten["Rel_SelfConsumption"];
           $query .= ",Autonomie=".$daten["Rel_Autonomy"];
           $query .= ",Akkustand_SOC=".$daten["Akkustand_SOC"];
+          if (isset($daten["Gen24Status"])) {
+            $query .= ",Gen24_Status=\"".$daten["Gen24Status"]."\"";
+          }
           $query .= "\n";
           $query .= "Summen ";
           $query .= "Wh_Heute=".round($daten["WattstundenGesamtHeute"],1);
@@ -1136,14 +1139,14 @@ class funktionen{
 
             $query .= "\n";
           }
-          if ($daten["Ohmpilot"] == 1) {   //
+          if ($daten["Ohmpilot"] == 1 and $daten["Gen24"] == false) {   //
             $query .= "Ohmpilot ";
             $query .= "Wirkleistung=".$daten["Ohmpilot_Wirkleistung"];
             $query .= ",EnergieGesamt=".$daten["Ohmpilot_EnergieGesamt"];
             $query .= "\n";
           }
 
-          if ($daten["Storage"] == 1) {
+          if ($daten["Storage"] == 1 and $daten["Gen24"] == false) {
             $query .= "Batterie ";
             $query .= "Max_Kapazitaet=".$daten["Batterie_Max_Kapazitaet"];
             $query .= ",Strom=".$daten["Batterie_Strom_DC"];
@@ -1156,10 +1159,7 @@ class funktionen{
             $query .= "\n";
           }
 
-
-
-
-          break;
+        break;
 
 
         // Joulie-16 BMS
@@ -2151,8 +2151,9 @@ class funktionen{
           break;
 
 
-    // Wallbe Wallbox
+    // Wallbe Wallbox  und  Phoenix Contact Wallbox
         case 35:
+        case 47:
           if (date("i") == "01" or $daten["Demodaten"] or date("H") == date("H",$Sonnenaufgang)) {
             $query .= "Info ";
             $query .= "Firmware=\"".$daten["Firmware"]."\"";
@@ -2425,6 +2426,7 @@ class funktionen{
           $query .= ",Strom_T=".$daten["APhase3"];
           $query .= ",Leistung_gesamt=".$daten["W"];
           $query .= ",aktuelleLeistung=".$daten["W"];
+          $query .= ",Hausverbrauch=".$daten["WHouseConsumption"];
           $query .= "\n";
           $query .= "Service ";
           $query .= "Stationsstatus=".$daten["Stationsstatus"];
@@ -2671,6 +2673,8 @@ class funktionen{
           $query .= ",Strom6=".$daten["PV_Strom6"];
           $query .= ",Spannung7=".$daten["PV_Spannung7"];
           $query .= ",Spannung8=".$daten["PV_Spannung8"];
+          $query .= ",Strom7=".$daten["PV_Strom7"];
+          $query .= ",Strom8=".$daten["PV_Strom8"];
           $query .= ",Leistung=".$daten["PV_Leistung"];
           $query .= ",MPPT1_Leistung=".$daten["MPPT1_Leistung"];
           $query .= ",MPPT2_Leistung=".$daten["MPPT2_Leistung"];
@@ -2691,6 +2695,50 @@ class funktionen{
           break;
 
 
+        //  Growatt Wechselrichter
+        case 48:
+          if (date("i") == "01" or $daten["Demodaten"] or date("H") == date("H",$Sonnenaufgang)) {
+            $query .= "Info ";
+            $query .= "Firmware=\"".$daten["Firmware"]."\"";
+            $query .= ",Produkt=\"".$daten["Modell"]."\"";
+            $query .= ",Objekt=\"".$daten["Objekt"]."\"";
+            $query .= ",Datum=\"".$daten["Datum"]."\"";
+          }
+          $query .= "\n";								// *
+          $query .= "AC ";
+          $query .= "Spannung_R=".$daten["AC_Spannung_R"];
+          $query .= ",Spannung_S=".$daten["AC_Spannung_S"];
+          $query .= ",Spannung_T=".$daten["AC_Spannung_T"];
+          $query .= ",Strom_R=".$daten["AC_Strom_R"];
+          $query .= ",Strom_S=".$daten["AC_Strom_S"];
+          $query .= ",Strom_T=".$daten["AC_Strom_T"];
+          $query .= ",Leistung_R=".$daten["AC_Leistung_R"];
+          $query .= ",Leistung_S=".$daten["AC_Leistung_S"];
+          $query .= ",Leistung_T=".$daten["AC_Leistung_T"];
+          $query .= ",Frequenz=".$daten["AC_Frequenz"];
+          $query .= ",Leistung=".$daten["AC_Leistung"];
+          $query .= "\n";										// *
+          $query .= "PV ";
+          $query .= "String1_Spannung=".$daten["PV_Spannung1"];
+          $query .= ",String2_Spannung=".$daten["PV_Spannung2"];
+          $query .= ",String1_Strom=".$daten["PV_Strom1"];
+          $query .= ",String2_Strom=".$daten["PV_Strom2"];
+          $query .= ",String1_Leistung=".$daten["PV_Leistung1"];
+          $query .= ",String2_Leistung=".$daten["PV_Leistung2"];
+          $query .= ",Leistung=".$daten["PV_Leistung"];
+          $query .= "\n";										// *
+          $query .= "Service ";
+          $query .= "FehlerCode=".$daten["FehlerCode"];
+          $query .= ",Warnungen=".$daten["Warnungen"];
+          $query .= ",Status=".$daten["Status"];
+          $query .= ",AnzahlStrings=".$daten["Anz.MPPT"];
+          $query .= ",AnzahlPhasen=".$daten["Anz.Phasen"];
+          $query .= ",Temperatur=".$daten["Temperatur"];
+          $query .= "\n";
+          $query .= "Summen ";
+          $query .= "Wh_Heute=".round($daten["WattstundenGesamtHeute"],1);
+          $query .= ",Wh_Gesamt=".$daten["WattstundenGesamt"];
+          break;
 
 
         default:
@@ -3147,7 +3195,11 @@ class funktionen{
     //  Dort steht drin ob die Zentrale den Wert übernommen hat.
     $result = curl_exec($ch);
     $rc_info = curl_getinfo ($ch);
-    if ($rc_info["http_code"] != 200) {
+    if ($rc_info["http_code"] == 404) {
+      $this->log_schreiben("Datenabfrage falsch! info: ".var_export($rc_info,1),"   ",9);
+      return false;
+    }
+    elseif ($rc_info["http_code"] != 200) {
       $this->log_schreiben("Datenabfrage falsch! info: ".var_export($rc_info,1),"   ",5);
       return false;
     }
@@ -5830,6 +5882,7 @@ class funktionen{
 
     $BefehlBin = $BefehlBin.$this->crc16($BefehlBin);
     $data = array();
+    $data["ok"] = false;
 
     // Befehl in HEX!
     // echo $Input["DeviceID"].$Input["BefehlFunctionCode"].$Input["RegisterAddress"].$Input["RegisterCount"];
@@ -5853,7 +5906,7 @@ class funktionen{
           $data["address"] = substr(bin2hex($buffer),0,2);
           $data["functioncode"] = substr(bin2hex($buffer),2,2);
           $data["lenght"] = substr(bin2hex($buffer),4,2);
-          $data["data"] = substr(bin2hex($buffer),6,$data["lenght"]*2);
+          $data["data"] = substr(bin2hex($buffer),6,hexdec($data["lenght"])*2);
           $data["ok"] = true;
           // echo $data["data"]." ..\n";
           break 2;
