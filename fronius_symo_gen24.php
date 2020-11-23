@@ -43,9 +43,20 @@ $RemoteDaten = false;
 $DatenOK = true;
 $Device = "WR"; // WR = Wechselrichter
 $aktuelleDaten = array();
+$syncData = array();
 $energyData = array();
 $Version = "";
+
+// disable some queries
+$GetInverterInfo = false;
+$CumulationInverterData = false;
+$GetMeterRealtimeData = false;
+
+$MaxWiederholungen = 30;
+$MaxScriptRuntime = 58.0;
+
 $Start = time();  // Timestamp festhalten
+$MicroStart = microtime(true);
 $funktionen->log_schreiben("-------------   Start  fronius_symo_gen24.php    --------------- ","|--",6);
 setlocale(LC_TIME,"de_DE.utf8");
 
@@ -247,6 +258,36 @@ function onTimestampChangedUpdateAndResetCounter(&$energyData, $span, $value) {
 /////////////////////
 
 
+$syncDataFile = $Pfad."/database/".$GeraeteNummer.".syncData.ini";
+if (file_exists($syncDataFile)) {
+	$funktionen->log_schreiben("Datei ".$syncDataFile." vorhanden.","   ",5);
+	if (false === ($syncData = readIniFile($syncDataFile))) {
+		$funktionen->log_schreiben("Konnte die Datei ".$syncDataFile." nicht lesen.","   ",5);
+	}
+	else
+	{
+        $funktionen->log_schreiben(print_r($syncData,1),"*- ",8);
+		if ((isset($syncData["connection"]["disabled"])) and $syncData["connection"]["disabled"] == 1)
+		{
+			$funktionen->log_schreiben("Verbindung zu Host '".$syncData["connection"]["host"]."' ist disabled.","   ",5);
+		}
+		else
+		{
+			$connection = ssh2_connect($syncData["connection"]["host"], 22);
+			if ($connection)
+			{
+				ssh2_auth_password($connection, $syncData["connection"]["username"], $syncData["connection"]["password"]);
+				ssh2_scp_recv($connection, $syncData["connection"]["source"], $syncData["connection"]["dest"]);		
+				ssh2_disconnect($connection);
+			}
+			else
+			{
+				$funktionen->log_schreiben("Konnte keine Verbindung zu Host '".$syncData["connection"]["host"]."' aufbauen.","   ",5);
+			}
+		}
+	}
+}
+
 $energyDataFile = $Pfad."/database/".$GeraeteNummer.".energyData.ini";
 if (file_exists($energyDataFile)) {
 	$funktionen->log_schreiben("Datei ".$energyDataFile." vorhanden.","   ",5);
@@ -330,6 +371,9 @@ do {
 
 
 
+if ($GetInverterInfo === true)
+{
+// GetInverterInfo
   $URL  = "solar_api/v1/GetInverterInfo.cgi";
 
   $JSON_Daten = $funktionen->read($WR_IP,$WR_Port,$URL);
@@ -351,7 +395,7 @@ do {
   else {
     break;
   }
-  
+}
 
   // 3PInverterData
   $URL  = "solar_api/v1/GetInverterRealtimeData.cgi";
@@ -381,6 +425,7 @@ do {
   }
 
 
+  if ($CumulationInverterData === true) {
   // CumulationInverterData
   $URL  = "solar_api/v1/GetInverterRealtimeData.cgi";
   $URL .= "?Scope=Device";
@@ -401,6 +446,7 @@ do {
   }
   else {
     break;
+  }
   }
 
 
@@ -484,6 +530,8 @@ do {
   }
 
 
+if ($GetMeterRealtimeData === true)
+{
   // Meter
   if ($aktuelleDaten["DeviceInfo"]["Meter"] == 1)  {
     // GetMeterRealtimeData
@@ -554,6 +602,7 @@ do {
     }
 
   }
+}
 
 
   // not tested
@@ -741,17 +790,31 @@ do {
     break;
   }
   else {
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((54 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
-    sleep(floor((54 - (time() - $Start))/($Wiederholungen-$i+1)));
+	$DeltaTime = ($MaxScriptRuntime - (time() - $Start))/($Wiederholungen-$i+1);
+	$MicroNow = microtime(true);
+	// $MicroDelta = (57 - ($MicroNow - $MicroStart))/($Wiederholungen-$i);
+	$MicroDelta = ($MaxScriptRuntime - ($MicroNow - $MicroStart))/($Wiederholungen-$i+1);
+	$MicroUntil = $MicroNow + $MicroDelta;
+    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor($DeltaTime))." DeltaTime: ".$DeltaTime." MicroDelta: ".$MicroDelta." MicroUntil: ".$MicroUntil,"   ",9);
+    // $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((57 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
+    // sleep(floor($DeltaTime));
+	// usleep(floor($MicroDelta*1000000));
+	// usleep(floor($MicroDelta*825000));
+	// usleep(floor($MicroDelta*820000));
+	// usleep(floor($MicroDelta*600000)); // 24
+    if ($i < $Wiederholungen) {
+	  usleep(floor($MicroDelta*560500));
+	}
+	// time_sleep_until($MicroUntil);
   }
-  if ($Wiederholungen <= $i or $i >= 6) {
+  if ($Wiederholungen <= $i or $i >= $MaxWiederholungen) {
     $funktionen->log_schreiben("OK. Daten gelesen.","   ",9);
     $funktionen->log_schreiben("Schleife ".$i." Ausgang...","   ",8);
     break;
   }
 
   $i++;
-} while (($Start + 54) > time());
+} while (($Start + $MaxScriptRuntime) > time());
 
 
 
