@@ -255,7 +255,7 @@ class funktionen{
   //
   //
   **************************************************************************/
-  function influx_local($daten)   {
+  function influx_local(&$daten)   {
 
     $query = "";
     if (!isset($daten["InfluxDBLokal"])) {
@@ -264,14 +264,21 @@ class funktionen{
 
     //  Jetzt müssen die Daten in die lokale InfluxDB übertragen werden.
     //
+    $this->log_schreiben("Daten zur lokalen InfluxDB [ ".$daten["InfluxDBLokal"]." ] senden ... ","*  ",8);
+	if ((intval(date('i')) % 10) == 0) {
+      $this->log_schreiben("10 Minuten Raster","   ",5);
+	}
+	
     //  Zuerst die Statistikdaten übertragen. Einmal am Tage um 23:58 Uhr.
-    if (date("i") == '00' or date("i") == '10' or date("i") == '20' or date("i") == '30' or date("i") == '40' or date("i") == '50') {
+    if (isset($daten["WattstundenGesamtHeute"]) and (date("i") == '00' or date("i") == '10' or date("i") == '20' or date("i") == '30' or date("i") == '40' or date("i") == '50')) {
     // if (1 == 1) {
       //$this->log_schreiben("Aktuelle Statistik:\n".print_r($daten,1),"   ",9);
       $this->log_schreiben("Alle 10 Minuten werden die Statistikdaten übertragen.","   ",5);
 
       $query  = "Statistik Bezeichnung=\"WhTag\",Datum=\"".$daten['Datum']."\",Woche=".$daten['Woche'].",Monat=".$daten['Monat'].",";
       $query .= "Wert=".$daten["WattstundenGesamtHeute"].",Wochentag=\"".$daten['Wochentag']."\"";
+
+	  $this->log_schreiben("query: \n".print_r($query,1),"   ",8);
 
       $ch = curl_init('http://localhost/write?db='.$daten["InfluxDBLokal"].'&precision=s');
 
@@ -374,7 +381,7 @@ class funktionen{
   //
   //
   **************************************************************************/
-  function influx_remote($daten)   {
+  function influx_remote(&$daten)   {
 
     $query = "";
 
@@ -383,7 +390,7 @@ class funktionen{
     //
 
     //  Zuerst die Statistikdaten übertragen. Einmal am Tage um 00:00 Uhr.
-    if (date("i") == '00' or date("i") == '10' or date("i") == '20' or date("i") == '30' or date("i") == '40' or date("i") == '50') {
+    if (isset($daten["WattstundenGesamtHeute"]) and (date("i") == '00' or date("i") == '10' or date("i") == '20' or date("i") == '30' or date("i") == '40' or date("i") == '50')) {
       // $this->log_schreiben("Aktuelle Statistik:\n".print_r($daten,1),"   ",9);
       $this->log_schreiben("Alle 10 Minuten werden die Statistikdaten remote übertragen.","   ",5);
 
@@ -582,7 +589,7 @@ class funktionen{
   //
   **************************************************************************/
 
-  function query_erzeugen($daten){
+  function query_erzeugen(&$daten){
 
     $Summe = 0;
     $now=time();
@@ -2738,6 +2745,90 @@ class funktionen{
           $query .= "Summen ";
           $query .= "Wh_Heute=".round($daten["WattstundenGesamtHeute"],1);
           $query .= ",Wh_Gesamt=".$daten["WattstundenGesamt"];
+          break;
+
+
+        // Fronius Symo Gen24 Wechselrichter
+        case 120:
+          if (date("i") == "01" or $daten["Demodaten"] or date("H") == date("H",$Sonnenaufgang)) {
+            $query .= "Info";
+            $query .= " Firmware=".$daten["Firmware"];
+            $query .= ",Produkt=\"".$daten["Produkt"]."\"";
+            $query .= ",Objekt=\"".$daten["Objekt"]."\"";
+            $query .= ",Datum=\"".$daten["Datum"]."\"";
+ 		    $query .= " ".$daten["Timestamp"]."\n";
+ 		    $this->log_schreiben("Info speichern -> Datum: ".print_r($daten["Datum"],1),"   ",7);
+          }
+		  
+          $query .= "Inverter";
+          $query .= " State=\"".$daten["InverterCommon"]["InverterState"]."\"";
+          $query .= ",Temperature=".$daten["Inverter3P"]["T_AMBIENT"];
+          $query .= ",UAC=".$daten["InverterCommon"]["UAC"]["SUM"];
+          $query .= ",IAC=".$daten["InverterCommon"]["IAC"]["SUM"];
+          $query .= ",FAC=".$daten["InverterCommon"]["FAC"];
+          $query .= ",PAC=".$daten["InverterCommon"]["PAC"];
+          $query .= ",UDC_1=".$daten["InverterCommon"]["UDC"]["1"];
+          $query .= ",UDC_2=".$daten["InverterCommon"]["UDC"]["2"];
+          $query .= ",IDC_1=".$daten["InverterCommon"]["IDC"]["1"];
+          $query .= ",IDC_2=".$daten["InverterCommon"]["IDC"]["2"];
+	      $query .= " ".$daten["Timestamp"]."\n";
+
+          $query .= "Power";
+          $query .= " GridFeed=".$daten["Power"]["GridFeed"];
+          $query .= ",GridPurchase=".$daten["Power"]["GridPurchase"];
+          $query .= ",TotalConsumption=".$daten["Power"]["TotalConsumption"];
+          $query .= ",SelfConsumption=".$daten["Power"]["SelfConsumption"];
+          $query .= ",AC=".$daten["Power"]["AC"];
+          $query .= ",PV=".$daten["Power"]["PV"];
+          $query .= ",Rel_Autonomy=".$daten["PowerFlow"]["Rel"]["Autonomy"];
+          $query .= ",Rel_SelfConsumption=".$daten["PowerFlow"]["Rel"]["SelfConsumption"];
+	      $query .= " ".$daten["Timestamp"]."\n";
+          
+		  $query .= "EnergyPerDay";
+          $query .= " GridFeed=".$daten["Energy"]["GridFeed"]["Day"];
+          $query .= ",GridPurchase=".$daten["Energy"]["GridPurchase"]["Day"];
+          $query .= ",GridConsumed=".$daten["Energy"]["GridConsumed"]["Day"];
+          $query .= ",GridProduced=".$daten["Energy"]["GridProduced"]["Day"];
+          $query .= ",SelfConsumption=".$daten["Energy"]["SelfConsumption"]["Day"];
+          $query .= ",TotalConsumption=".$daten["Energy"]["TotalConsumption"]["Day"];
+          $query .= ",AC=".$daten["Energy"]["AC"]["Day"];
+          $query .= ",PV=".$daten["Energy"]["PV"]["Day"];
+	      $query .= " ".$daten["Timestamp"]."\n";
+          
+		  $query .= "EnergyPerMonth";
+          $query .= " GridFeed=".$daten["Energy"]["GridFeed"]["Month"];
+          $query .= ",GridPurchase=".$daten["Energy"]["GridPurchase"]["Month"];
+          $query .= ",GridConsumed=".$daten["Energy"]["GridConsumed"]["Month"];
+          $query .= ",GridProduced=".$daten["Energy"]["GridProduced"]["Month"];
+          $query .= ",SelfConsumption=".$daten["Energy"]["SelfConsumption"]["Month"];
+          $query .= ",TotalConsumption=".$daten["Energy"]["TotalConsumption"]["Month"];
+          $query .= ",AC=".$daten["Energy"]["AC"]["Month"];
+          $query .= ",PV=".$daten["Energy"]["PV"]["Month"];
+	      $query .= " ".$daten["Timestamp"]."\n";
+          
+		  $query .= "EnergyPerYear";
+          $query .= " GridFeed=".$daten["Energy"]["GridFeed"]["Year"];
+          $query .= ",GridPurchase=".$daten["Energy"]["GridPurchase"]["Year"];
+          $query .= ",GridConsumed=".$daten["Energy"]["GridConsumed"]["Year"];
+          $query .= ",GridProduced=".$daten["Energy"]["GridProduced"]["Year"];
+          $query .= ",SelfConsumption=".$daten["Energy"]["SelfConsumption"]["Year"];
+          $query .= ",TotalConsumption=".$daten["Energy"]["TotalConsumption"]["Year"];
+          $query .= ",AC=".$daten["Energy"]["AC"]["Year"];
+          $query .= ",PV=".$daten["Energy"]["PV"]["Year"];
+	      $query .= " ".$daten["Timestamp"]."\n";
+  		  
+		  $query .= "EnergyTotal";
+          $query .= " GridFeed=".$daten["Energy"]["GridFeed"]["Total"];
+          $query .= ",GridPurchase=".$daten["Energy"]["GridPurchase"]["Total"];
+          $query .= ",GridConsumed=".$daten["Energy"]["GridConsumed"]["Total"];
+          $query .= ",GridProduced=".$daten["Energy"]["GridProduced"]["Total"];
+          $query .= ",SelfConsumption=".$daten["Energy"]["SelfConsumption"]["Total"];
+          $query .= ",TotalConsumption=".$daten["Energy"]["TotalConsumption"]["Total"];
+          $query .= ",AC=".$daten["Energy"]["AC"]["Total"];
+          $query .= ",PV=".$daten["Energy"]["PV"]["Total"];
+	      $query .= " ".$daten["Timestamp"]."\n";
+  
+		  $this->log_schreiben("query: \n".print_r($query,1),"   ",8);
           break;
 
 

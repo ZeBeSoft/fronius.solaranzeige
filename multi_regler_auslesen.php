@@ -293,6 +293,11 @@ for ($mra_i = 1; $mra_i < 7; $mra_i++) {
         require($Pfad."/growatt.php");
       break;
 
+      case 120:
+        // Fronius Symo Gen24
+        require($Pfad."/fronius_symo_gen24.php");
+      break;
+
 
       default:
         // echo "Fehler! Es muss ein gültiger Regler angegeben werden.";
