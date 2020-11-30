@@ -2787,6 +2787,8 @@ class funktionen{
 		  $query .= "EnergyPerDay";
           $query .= " GridFeed=".$daten["Energy"]["GridFeed"]["Day"];
           $query .= ",GridPurchase=".$daten["Energy"]["GridPurchase"]["Day"];
+          $query .= ",GridConsumed=".$daten["Energy"]["GridConsumed"]["Day"];
+          $query .= ",GridProduced=".$daten["Energy"]["GridProduced"]["Day"];
           $query .= ",SelfConsumption=".$daten["Energy"]["SelfConsumption"]["Day"];
           $query .= ",TotalConsumption=".$daten["Energy"]["TotalConsumption"]["Day"];
           $query .= ",AC=".$daten["Energy"]["AC"]["Day"];
@@ -2796,6 +2798,8 @@ class funktionen{
 		  $query .= "EnergyPerMonth";
           $query .= " GridFeed=".$daten["Energy"]["GridFeed"]["Month"];
           $query .= ",GridPurchase=".$daten["Energy"]["GridPurchase"]["Month"];
+          $query .= ",GridConsumed=".$daten["Energy"]["GridConsumed"]["Month"];
+          $query .= ",GridProduced=".$daten["Energy"]["GridProduced"]["Month"];
           $query .= ",SelfConsumption=".$daten["Energy"]["SelfConsumption"]["Month"];
           $query .= ",TotalConsumption=".$daten["Energy"]["TotalConsumption"]["Month"];
           $query .= ",AC=".$daten["Energy"]["AC"]["Month"];
@@ -2805,6 +2809,8 @@ class funktionen{
 		  $query .= "EnergyPerYear";
           $query .= " GridFeed=".$daten["Energy"]["GridFeed"]["Year"];
           $query .= ",GridPurchase=".$daten["Energy"]["GridPurchase"]["Year"];
+          $query .= ",GridConsumed=".$daten["Energy"]["GridConsumed"]["Year"];
+          $query .= ",GridProduced=".$daten["Energy"]["GridProduced"]["Year"];
           $query .= ",SelfConsumption=".$daten["Energy"]["SelfConsumption"]["Year"];
           $query .= ",TotalConsumption=".$daten["Energy"]["TotalConsumption"]["Year"];
           $query .= ",AC=".$daten["Energy"]["AC"]["Year"];
@@ -2814,6 +2820,8 @@ class funktionen{
 		  $query .= "EnergyTotal";
           $query .= " GridFeed=".$daten["Energy"]["GridFeed"]["Total"];
           $query .= ",GridPurchase=".$daten["Energy"]["GridPurchase"]["Total"];
+          $query .= ",GridConsumed=".$daten["Energy"]["GridConsumed"]["Total"];
+          $query .= ",GridProduced=".$daten["Energy"]["GridProduced"]["Total"];
           $query .= ",SelfConsumption=".$daten["Energy"]["SelfConsumption"]["Total"];
           $query .= ",TotalConsumption=".$daten["Energy"]["TotalConsumption"]["Total"];
           $query .= ",AC=".$daten["Energy"]["AC"]["Total"];

@@ -50,7 +50,7 @@ $Version = "";
 // disable some queries
 $GetInverterInfo = false;
 $CumulationInverterData = false;
-$GetMeterRealtimeData = false;
+$GetMeterRealtimeData = true;
 
 $MaxWiederholungen = 30;
 $MaxScriptRuntime = 58.0;
@@ -168,6 +168,11 @@ function ini_write($fp, $_data, $filename, $maxdepth=3)
 $energyDataType = array("GridFeed","GridPurchase","SelfConsumption","TotalConsumption","AC","PV");
 $energyDataSpan = array("Day","Month","Year","Total","Power");
 
+$energyDataTypeMeter = array("GridConsumed","GridProduced");
+$energyDataSpanDayMonthYear = array("Day","Month","Year");
+$energyDataSpanDayMonthYearTotal = array("Day","Month","Year","Total");
+$energyDataSpanYearTotal = array("Year","Total");
+
 /////////////////////
 function defaultEnergyData() {
 	global $energyDataType;
@@ -243,15 +248,33 @@ function calculateEnergyLinearInterpolated(&$energy, $power, $timeStamp, $lastPo
 }
 
 /////////////////////
-function onTimestampChangedUpdateAndResetCounter(&$energyData, $span, $value) {
+function onTimestampChangedResetCounter(&$energyData, $span, $value) {
 	global $energyDataType;
 	if ($energyData["Timestamp"][$span] != $value) {
-		$energyData["Timestamp"][$span] = $value;
 		if ($energyData["Timestamp"]["epoche"] != 0) {
 			foreach($energyDataType as $type) {
 				$energyData[$type][$span] = 0;
 			}
 		}
+	}
+}
+
+/////////////////////
+function onTimestampChangedSetEnergyCounterToActualValue(&$energyData, &$energyGrid, $span, $value) {
+	global $energyDataTypeMeter;
+	if ($energyData["Timestamp"][$span] != $value) {
+		if ($energyData["Timestamp"]["epoche"] != 0) {
+			foreach($energyDataTypeMeter as $type) {
+				$energyData[$type][$span] = $energyGrid[$type];
+			}
+		}
+	}
+}
+
+/////////////////////
+function onTimestampChangedUpdate(&$energyData, $span, $value) {
+	if ($energyData["Timestamp"][$span] != $value) {
+        $energyData["Timestamp"][$span] = $value;
 	}
 }
 
@@ -596,6 +619,7 @@ if ($GetMeterRealtimeData === true)
 	  
       // Timestamp
 	  $aktuelleDaten[$prefix]["Timestamp"] = $JSON_Daten["Head"]["Timestamp"];
+      // $funktionen->log_schreiben(print_r($aktuelleDaten[$prefix]["SMARTMETER_ENERGYACTIVE_CONSUMED_SUM_F64"],1),"   ",5);
     }
     else {
       break;
@@ -670,14 +694,18 @@ if ($GetMeterRealtimeData === true)
     if ($aktuelleDaten["PowerFlow"]["Power"]["Grid"] < 0 ) {
       $aktuelleDaten["Power"]["GridFeed"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Grid"]);
       $aktuelleDaten["Power"]["GridPurchase"] = 0;
-      $aktuelleDaten["Power"]["TotalConsumption"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Load"]);
-      $aktuelleDaten["Power"]["SelfConsumption"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Load"]);
+      // $aktuelleDaten["Power"]["SelfConsumption"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Load"]);
+      $aktuelleDaten["Power"]["SelfConsumption"] = $aktuelleDaten["PowerFlow"]["Power"]["PV"] - $aktuelleDaten["Power"]["GridFeed"]; // wie solarweb ???
+      // $aktuelleDaten["Power"]["TotalConsumption"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Load"]);
+      $aktuelleDaten["Power"]["TotalConsumption"] = $aktuelleDaten["Power"]["SelfConsumption"]; // wie solarweb ???
     }
     else {
       $aktuelleDaten["Power"]["GridFeed"] = 0;
       $aktuelleDaten["Power"]["GridPurchase"] = $aktuelleDaten["PowerFlow"]["Power"]["Grid"];
-      $aktuelleDaten["Power"]["TotalConsumption"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Load"]);
-      $aktuelleDaten["Power"]["SelfConsumption"] = $aktuelleDaten["PowerFlow"]["Power"]["AC"];
+      // $aktuelleDaten["Power"]["SelfConsumption"] = $aktuelleDaten["PowerFlow"]["Power"]["AC"];
+      $aktuelleDaten["Power"]["SelfConsumption"] = $aktuelleDaten["PowerFlow"]["Power"]["PV"]; // wie solarweb rechnet
+      // $aktuelleDaten["Power"]["TotalConsumption"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Load"]);
+      $aktuelleDaten["Power"]["TotalConsumption"] = $aktuelleDaten["Power"]["GridPurchase"] + $aktuelleDaten["Power"]["SelfConsumption"]; // wie solarweb ???
     }
     $aktuelleDaten["Power"]["AC"] = $aktuelleDaten["PowerFlow"]["Power"]["AC"];
     $aktuelleDaten["Power"]["PV"] = $aktuelleDaten["PowerFlow"]["Power"]["PV"];
@@ -687,14 +715,14 @@ if ($GetMeterRealtimeData === true)
   //  Energie
   ****************************************************************************/
 
-  $day = date("j",$timeStampPowerFlow);
-  $month = date("n",$timeStampPowerFlow);
-  $year = date("Y",$timeStampPowerFlow);
+  $timeStampEnergy["Day"] = date("j",$timeStampPowerFlow);
+  $timeStampEnergy["Month"] = date("n",$timeStampPowerFlow);
+  $timeStampEnergy["Year"] = date("Y",$timeStampPowerFlow);
 
-  onTimestampChangedUpdateAndResetCounter($energyData,"Day",$day);
-  onTimestampChangedUpdateAndResetCounter($energyData,"Month",$month);
-  onTimestampChangedUpdateAndResetCounter($energyData,"Year",$year);
-
+  foreach($energyDataSpanDayMonthYear as $span) {
+      onTimestampChangedResetCounter($energyData,$span,$timeStampEnergy[$span]);
+  }
+  
   foreach($energyDataType as $type) {
 	foreach($energyDataSpan as $span) {
 		// linear interpolated energy 
@@ -705,7 +733,35 @@ if ($GetMeterRealtimeData === true)
   }
   $energyData["Timestamp"]["epoche"] = $timeStampPowerFlow;
 
+  /****************************************************************************
+  //  Energie vom SmartMeter
+  ****************************************************************************/
+  $energyGrid["GridConsumed"] = $aktuelleDaten["Meter"]["SMARTMETER_ENERGYACTIVE_CONSUMED_SUM_F64"];
+  $energyGrid["GridProduced"] = $aktuelleDaten["Meter"]["SMARTMETER_ENERGYACTIVE_PRODUCED_SUM_F64"];
+  
+  foreach($energyDataTypeMeter as $type) {
+      foreach($energyDataSpanYearTotal as $span) {
+		  // if (!isset($energyData[$type][$span])) {
+              // $energyData[$type][$span] = $energyGrid[$type];
+              // $energyData[$type][$span] = 0;
+		  // }
+	  }
+  }
 
+  foreach($energyDataSpanDayMonthYear as $span) {
+	  onTimestampChangedSetEnergyCounterToActualValue($energyData,$energyGrid,$span,$timeStampEnergy[$span]);
+  }
+
+  foreach($energyDataTypeMeter as $type) {
+      foreach($energyDataSpanDayMonthYearTotal as $span) {
+          $aktuelleDaten["Energy"][$type][$span] = $energyGrid[$type] - $energyData[$type][$span];
+	  }
+      $funktionen->log_schreiben(print_r($aktuelleDaten["Energy"][$type],1),"*- ",5);
+  }
+
+  foreach($energyDataSpanDayMonthYear as $span) {
+      onTimestampChangedUpdate($energyData,$span,$timeStampEnergy[$span]);
+  }
 
   /****************************************************************************
   //  Die Daten werden für die Speicherung vorbereitet.
@@ -795,7 +851,7 @@ if ($GetMeterRealtimeData === true)
 	// $MicroDelta = (57 - ($MicroNow - $MicroStart))/($Wiederholungen-$i);
 	$MicroDelta = ($MaxScriptRuntime - ($MicroNow - $MicroStart))/($Wiederholungen-$i+1);
 	$MicroUntil = $MicroNow + $MicroDelta;
-    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor($DeltaTime))." DeltaTime: ".$DeltaTime." MicroDelta: ".$MicroDelta." MicroUntil: ".$MicroUntil,"   ",9);
+    $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor($DeltaTime))." DeltaTime: ".$DeltaTime." MicroDelta: ".$MicroDelta." MicroUntil: ".$MicroUntil,"   ",5);
     // $funktionen->log_schreiben("Schleife: ".($i)." Zeitspanne: ".(floor((57 - (time() - $Start))/($Wiederholungen-$i+1))),"   ",9);
     // sleep(floor($DeltaTime));
 	// usleep(floor($MicroDelta*1000000));
@@ -803,7 +859,8 @@ if ($GetMeterRealtimeData === true)
 	// usleep(floor($MicroDelta*820000));
 	// usleep(floor($MicroDelta*600000)); // 24
     if ($i < $Wiederholungen) {
-	  usleep(floor($MicroDelta*560500));
+	  // usleep(floor($MicroDelta*560500));
+	  usleep(floor($MicroDelta*440000));
 	}
 	// time_sleep_until($MicroUntil);
   }
