@@ -820,8 +820,8 @@ if ($GetMeterRealtimeData === true)
   $aktuelleDaten["Regler"] = $Regler;
   $aktuelleDaten["Objekt"] = $Objekt;
 
-  // $funktionen->log_schreiben(print_r($aktuelleDaten,1),"*- ",10);
-  $funktionen->log_schreiben(print_r($aktuelleDaten,1),"*- ",5);
+  $funktionen->log_schreiben(print_r($aktuelleDaten,1),"*- ",10);
+  // $funktionen->log_schreiben(print_r($aktuelleDaten,1),"*- ",5);
 
 
   /**************************************************************************
