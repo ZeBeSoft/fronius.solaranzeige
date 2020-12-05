@@ -165,7 +165,7 @@ function ini_write($fp, $_data, $filename, $maxdepth=3)
 }
 
 /////////////////////
-$energyDataType = array("GridFeed","GridPurchase","SelfConsumption","TotalConsumption","AC","PV");
+$energyDataType = array("GridFeed","GridPurchase","SelfConsumption","TotalConsumption","AC","PV","AkkuCharge","AkkuDischarge");
 $energyDataSpan = array("Day","Month","Year","Total","Power");
 
 $energyDataTypeMeter = array("GridConsumed","GridProduced");
@@ -327,6 +327,14 @@ else {
 $aktuelleDaten["Energy"] = $energyData;
 
 $funktionen->log_schreiben(print_r($energyData,1),"*- ",8);
+
+if ((intval(date('i')) % 5) == 0) {
+  $funktionen->log_schreiben("5 Minuten Raster","   ",5);
+  $aktuelleDaten["StoreEnergy"] = true;
+}
+else {
+  $aktuelleDaten["StoreEnergy"] = false;
+}
 
 if($funktionen->tageslicht() or $InfluxDaylight === false)  {
   //  Der Wechselrichter wird nur am Tage abgefragt.
@@ -524,9 +532,17 @@ if ($GetInverterInfo === true)
 	
 	$prefix = "PowerFlow";
     $aktuelleDaten[$prefix]["Power"]["AC"] = $JSON_Daten["Body"]["Data"]["Inverters"][$WR_Adresse]["P"];
+
+	if (isset($JSON_Daten["Body"]["Data"]["Inverters"][$WR_Adresse]["Battery_Mode"])) {
+       $aktuelleDaten[$prefix]["Battery"]["BatteryState"] = $JSON_Daten["Body"]["Data"]["Inverters"][$WR_Adresse]["Battery_Mode"];
+	}
+	
+	if (isset($JSON_Daten["Body"]["Data"]["Inverters"][$WR_Adresse]["SOC"])) {
+       $aktuelleDaten[$prefix]["Battery"]["SOC"] = $JSON_Daten["Body"]["Data"]["Inverters"][$WR_Adresse]["SOC"];
+	}
 	
     $aktuelleDaten[$prefix]["Backup_Mode"] = $JSON_Daten["Body"]["Data"]["Site"]["BackupMode"];
-    $aktuelleDaten[$prefix]["Battery_Standby"] = $JSON_Daten["Body"]["Data"]["Site"]["BatteryStandby"];
+    $aktuelleDaten[$prefix]["Battery"]["Standby"] = $JSON_Daten["Body"]["Data"]["Site"]["BatteryStandby"];
 
     $aktuelleDaten[$prefix]["Energy"]["Today"] = $JSON_Daten["Body"]["Data"]["Site"]["E_Day"];
     $aktuelleDaten[$prefix]["Energy"]["Year"] = $JSON_Daten["Body"]["Data"]["Site"]["E_Year"];
@@ -690,27 +706,61 @@ if ($GetMeterRealtimeData === true)
   //  Leistung
   ****************************************************************************/
 
+  if (isset($aktuelleDaten["PowerFlow"]["Power"]["Akku"])) {
+    if ($aktuelleDaten["PowerFlow"]["Power"]["Akku"] < 0 ) {
+      $aktuelleDaten["Power"]["AkkuDischarge"] = 0;
+      $aktuelleDaten["Power"]["AkkuCharge"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Akku"]);
+    }
+    else {
+      $aktuelleDaten["Power"]["AkkuDischarge"] = $aktuelleDaten["PowerFlow"]["Power"]["Akku"];
+      $aktuelleDaten["Power"]["AkkuCharge"] = 0;
+    }
+  }
+  else {
+    $aktuelleDaten["Power"]["AkkuCharge"] = 0;
+    $aktuelleDaten["Power"]["AkkuDischarge"] = 0;
+  }
+
   if (isset($aktuelleDaten["PowerFlow"]["Power"]["Grid"])) {
+    $aktuelleDaten["Power"]["AC"] = $aktuelleDaten["PowerFlow"]["Power"]["AC"];
+    $aktuelleDaten["Power"]["PV"] = $aktuelleDaten["PowerFlow"]["Power"]["PV"];
     if ($aktuelleDaten["PowerFlow"]["Power"]["Grid"] < 0 ) {
       $aktuelleDaten["Power"]["GridFeed"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Grid"]);
       $aktuelleDaten["Power"]["GridPurchase"] = 0;
-      // $aktuelleDaten["Power"]["SelfConsumption"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Load"]);
-      $aktuelleDaten["Power"]["SelfConsumption"] = $aktuelleDaten["PowerFlow"]["Power"]["PV"] - $aktuelleDaten["Power"]["GridFeed"]; // wie solarweb ???
-      // $aktuelleDaten["Power"]["TotalConsumption"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Load"]);
-      $aktuelleDaten["Power"]["TotalConsumption"] = $aktuelleDaten["Power"]["SelfConsumption"]; // wie solarweb ???
+      if ($aktuelleDaten["Power"]["PV"] > $aktuelleDaten["Power"]["GridFeed"]) {
+        $aktuelleDaten["Power"]["SelfConsumption"] = $aktuelleDaten["Power"]["PV"] - $aktuelleDaten["Power"]["GridFeed"]; // wie solarweb ???
+	  }
+	  else {
+        $aktuelleDaten["Power"]["SelfConsumption"] = $aktuelleDaten["Power"]["PV"]; // wie solarweb ???
+	  }
     }
     else {
       $aktuelleDaten["Power"]["GridFeed"] = 0;
       $aktuelleDaten["Power"]["GridPurchase"] = $aktuelleDaten["PowerFlow"]["Power"]["Grid"];
-      // $aktuelleDaten["Power"]["SelfConsumption"] = $aktuelleDaten["PowerFlow"]["Power"]["AC"];
-      $aktuelleDaten["Power"]["SelfConsumption"] = $aktuelleDaten["PowerFlow"]["Power"]["PV"]; // wie solarweb rechnet
-      // $aktuelleDaten["Power"]["TotalConsumption"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Load"]);
-      $aktuelleDaten["Power"]["TotalConsumption"] = $aktuelleDaten["Power"]["GridPurchase"] + $aktuelleDaten["Power"]["SelfConsumption"]; // wie solarweb ???
+      $aktuelleDaten["Power"]["SelfConsumption"] = $aktuelleDaten["Power"]["PV"]; // wie solarweb rechnet
     }
-    $aktuelleDaten["Power"]["AC"] = $aktuelleDaten["PowerFlow"]["Power"]["AC"];
-    $aktuelleDaten["Power"]["PV"] = $aktuelleDaten["PowerFlow"]["Power"]["PV"];
+	
+    if ($aktuelleDaten["Meter"]["SMARTMETER_POWERACTIVE_MEAN_SUM_F64"] < 0 ) {
+      $aktuelleDaten["Power"]["MeterGridFeed"] = abs($aktuelleDaten["Meter"]["SMARTMETER_POWERACTIVE_MEAN_SUM_F64"]);
+      $aktuelleDaten["Power"]["MeterGridPurchase"] = 0;
+	}
+	else {
+      $aktuelleDaten["Power"]["MeterGridFeed"] = 0;
+      $aktuelleDaten["Power"]["MeterGridPurchase"] = $aktuelleDaten["Meter"]["SMARTMETER_POWERACTIVE_MEAN_SUM_F64"];
+	}
+    $aktuelleDaten["Power"]["DeltaGridFeed"] = $aktuelleDaten["Power"]["MeterGridFeed"] - $aktuelleDaten["Power"]["GridFeed"];
+    $aktuelleDaten["Power"]["DeltaGridPurchase"] = $aktuelleDaten["Power"]["MeterGridPurchase"] - $aktuelleDaten["Power"]["GridPurchase"];
   }
 
+  if (isset($aktuelleDaten["PowerFlow"]["Power"]["Load"])) {
+    if ($aktuelleDaten["PowerFlow"]["Power"]["Load"] < 0 ) {
+      $aktuelleDaten["Power"]["TotalConsumption"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Load"]);; // wie solarweb ???
+    }
+    else {
+      $aktuelleDaten["Power"]["TotalConsumption"] = 0; // wann ist 'Load' positiv und was bedeutet das?
+	}
+  }
+  
   /****************************************************************************
   //  Energie
   ****************************************************************************/
@@ -756,7 +806,7 @@ if ($GetMeterRealtimeData === true)
       foreach($energyDataSpanDayMonthYearTotal as $span) {
           $aktuelleDaten["Energy"][$type][$span] = $energyGrid[$type] - $energyData[$type][$span];
 	  }
-      $funktionen->log_schreiben(print_r($aktuelleDaten["Energy"][$type],1),"*- ",5);
+      $funktionen->log_schreiben(print_r($aktuelleDaten["Energy"][$type],1),"*- ",8);
   }
 
   foreach($energyDataSpanDayMonthYear as $span) {
@@ -770,8 +820,8 @@ if ($GetMeterRealtimeData === true)
   $aktuelleDaten["Regler"] = $Regler;
   $aktuelleDaten["Objekt"] = $Objekt;
 
-
-  $funktionen->log_schreiben(print_r($aktuelleDaten,1),"*- ",10);
+  // $funktionen->log_schreiben(print_r($aktuelleDaten,1),"*- ",10);
+  $funktionen->log_schreiben(print_r($aktuelleDaten,1),"*- ",5);
 
 
   /**************************************************************************
