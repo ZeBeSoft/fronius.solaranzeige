@@ -754,12 +754,20 @@ if ($GetMeterRealtimeData === true)
 
   if (isset($aktuelleDaten["PowerFlow"]["Power"]["Load"])) {
     if ($aktuelleDaten["PowerFlow"]["Power"]["Load"] < 0 ) {
-      $aktuelleDaten["Power"]["TotalConsumption"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Load"]);; // wie solarweb ???
+      if (abs($aktuelleDaten["PowerFlow"]["Power"]["Load"]) < $aktuelleDaten["Power"]["GridPurchase"]) {
+        $aktuelleDaten["Power"]["TotalConsumption"] = $aktuelleDaten["Power"]["GridPurchase"]; // Batterie wird ueber grid nachgeladen
+      }
+	  else {
+        $aktuelleDaten["Power"]["TotalConsumption"] = abs($aktuelleDaten["PowerFlow"]["Power"]["Load"]); // wie solarweb ???
+	  }
     }
     else {
       $aktuelleDaten["Power"]["TotalConsumption"] = 0; // wann ist 'Load' positiv und was bedeutet das?
 	}
   }
+  // $funktionen->log_schreiben("\naktuelleDaten[PowerFlow] => ".print_r($aktuelleDaten["PowerFlow"],1),"   ",5);
+  // $funktionen->log_schreiben("\naktuelleDaten[Power] => ".print_r($aktuelleDaten["Power"],1),"   ",5);
+
   
   /****************************************************************************
   //  Energie
@@ -910,7 +918,8 @@ if ($GetMeterRealtimeData === true)
 	// usleep(floor($MicroDelta*600000)); // 24
     if ($i < $Wiederholungen) {
 	  // usleep(floor($MicroDelta*560500));
-	  usleep(floor($MicroDelta*440000));
+	  // usleep(floor($MicroDelta*440000));
+	  usleep(floor($MicroDelta*410000));
 	}
 	// time_sleep_until($MicroUntil);
   }
